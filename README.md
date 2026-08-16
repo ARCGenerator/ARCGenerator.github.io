@@ -1,1 +1,3538 @@
-# ARCGenerator.github.io
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PBG — Progress Bar Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { overflow-x: hidden; width: 100%; }
+
+:root {
+  --bg:       #000000;
+  --surface:  #18181b;
+  --surface2: #27272a;
+  --border:   #3f3f46;
+  --muted:    #71717a;
+  --label:    #a1a1aa;
+  --text:     #ffffff;
+  --toggle-on:#22c55e;
+  --radius:   8px;
+  --radius-sm:6px;
+  --accent:   #FFD400;
+  --ui-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+/* Thème clair — mêmes rôles de variables, palette inversée, accent jaune conservé */
+body.theme-light {
+  --bg:       #f4f4f5;
+  --surface:  #ffffff;
+  --surface2: #e4e4e7;
+  --border:   #d4d4d8;
+  --muted:    #a1a1aa;
+  --label:    #52525b;
+  --text:     #18181b;
+  --toggle-on:#16a34a;
+  --accent:   #E0B000;
+}
+body.theme-light .hamburger,
+body.theme-light .btn-choose,
+body.theme-light .btn-save,
+body.theme-light .dir-btn,
+body.theme-light .gradient-btn,
+body.theme-light .zone-chip { border-color: var(--border); }
+body.theme-light .color-box { border-color: rgba(0,0,0,.1); }
+body.theme-light .toggle-switch-lg.on::after,
+body.theme-light .grad-switch.on::after { background: #fff; }
+body.theme-light .saved-card .actions button.danger,
+body.theme-light .settings-card .row-s button { border-color: #f0b8b0; }
+
+body {
+  font-family: var(--ui-font);
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: background .25s, color .25s;
+}
+
+/* Scrollbars fines et discrètes */
+.content, .gen-col-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.content::-webkit-scrollbar, .gen-col-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.content::-webkit-scrollbar-track, .gen-col-scroll::-webkit-scrollbar-track { background: transparent; }
+.content::-webkit-scrollbar-thumb, .gen-col-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+.content::-webkit-scrollbar-thumb:hover, .gen-col-scroll::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* HEADER */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  height: 56px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-left { display: flex; align-items: center; gap: 10px; }
+.hamburger {
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .15s;
+}
+.hamburger:hover { background: var(--border); }
+.brand-badge { font-weight: 700; font-size: 20px; letter-spacing: .05em; color: var(--text); }
+.brand-sep { width: 1px; height: 16px; background: var(--border); }
+.brand-name { font-size: 14px; font-weight: 400; color: var(--label); }
+.theme-toggle { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--label); cursor: pointer; user-select: none; }
+.toggle-switch-lg { width: 40px; height: 22px; background-color: var(--surface2); border-radius: 20px; position: relative; border: 1px solid var(--border); transition: background .2s; flex-shrink: 0; }
+.toggle-switch-lg::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background-color: var(--text); border-radius: 50%; transition: transform .2s; }
+.toggle-switch-lg.on { background: var(--toggle-on); }
+.toggle-switch-lg.on::after { transform: translateX(18px); background: #fff; }
+
+/* APP SHELL (sidebar persistante desktop + contenu) */
+.app-shell { display: flex; flex: 1; min-height: 0; }
+
+.sidebar {
+  width: 220px; flex-shrink: 0;
+  background: var(--bg);
+  border-right: 1px solid var(--border);
+  display: none;
+  flex-direction: column;
+  padding-top: 12px;
+  padding-bottom: 20px;
+}
+.sidebar-nav { display: flex; flex-direction: column; gap: 0; flex: 1; margin-top: 0; }
+.sidebar-pro { margin-top: auto; padding: 0 16px; }
+
+.nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 24px; border-radius: 0;
+  cursor: pointer; color: var(--label);
+  font-size: 14px; font-weight: 500;
+  transition: all .2s;
+  border: none; border-left: 3px solid transparent;
+  background: none; text-align: left; width: 100%;
+  font-family: var(--ui-font);
+}
+.nav-item .icon { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.nav-item .tag { font-size: 9px; background: var(--border); padding: 2px 6px; border-radius: 5px; margin-left: auto; color: var(--muted); flex-shrink: 0; }
+.crown-badge { width: 14px; height: 14px; margin-left: auto; flex-shrink: 0; color: var(--accent); }
+.nav-item:hover { color: var(--text); }
+.nav-item.active { background: var(--surface); color: var(--text); border-left-color: var(--text); font-weight: 500; }
+
+.pro-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px; margin-top: 14px;
+}
+body:not(.theme-light) .sidebar-pro .pro-card { background: #000000; }
+.pro-card .t { font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.pro-logo { width: 16px; height: 16px; flex-shrink: 0; }
+.pro-card .d { font-size: 11.5px; line-height: 1.5; color: var(--label); margin-bottom: 12px; }
+.pro-card button {
+  width: 100%; padding: 9px; border: none; border-radius: var(--radius-sm);
+  background: var(--text); color: var(--bg);
+  font-family: var(--ui-font); font-weight: 700; font-size: 12.5px;
+  cursor: pointer; transition: opacity .15s;
+}
+.pro-card button:hover { opacity: .85; }
+
+/* CONTENU / PAGES */
+.content { flex: 1; min-width: 0; overflow-y: auto; overflow-x: hidden; }
+.page { display: none; padding: 32px 40px 48px; max-width: 1180px; margin: 0 auto; width: 100%; overflow-x: hidden; box-sizing: border-box; }
+.page.active { display: block; }
+.page-header { margin-bottom: 22px; }
+.page-header h1 { font-size: 24px; font-weight: 800; letter-spacing: -.02em; }
+.page-header p { font-size: 13.5px; color: var(--label); margin-top: 4px; }
+
+/* Layout deux colonnes de la page Générateur */
+.gen-layout { display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; align-items: start; }
+/* Dissuasion anti-fraude : empêche la sélection, le glisser-déposer et le menu "enregistrer l'image"
+   (clic droit desktop / appui long mobile) partout dans le générateur. Ne bloque pas les captures
+   d'écran système, qui sont hors de portée du web — voir le filigrane sur l'aperçu Free pour la
+   vraie protection. */
+#page-generateur, #page-generateur * {
+  user-select: none; -webkit-user-select: none; -moz-user-select: none;
+  -webkit-touch-callout: none;
+}
+#page-generateur input, #page-generateur textarea { user-select: text; -webkit-user-select: text; }
+.gen-col { display: flex; flex-direction: column; gap: 12px; }
+
+#page-generateur.active { height: 100%; overflow: hidden; padding: 0; max-width: none; margin: 0; }
+#page-generateur .gen-layout { height: 100%; padding-left: 40px; gap: 20px; align-items: stretch; }
+#page-generateur .gen-col {
+  height: 100%; overflow-y: auto;
+  padding: 32px 14px 32px 2px;
+  scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+}
+#page-generateur .gen-col::-webkit-scrollbar { width: 6px; }
+#page-generateur .gen-col::-webkit-scrollbar-track { background: transparent; }
+#page-generateur .gen-col::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+#page-generateur .gen-col::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+#page-generateur .gen-col:last-child { border-left: 1px solid var(--border); padding: 32px 40px 32px 20px; }
+
+/* Favoris sur les cartes de style */
+.style-card { position: relative; }
+.fav-btn {
+  position: absolute; top: 8px; right: 8px; z-index: 2;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: rgba(0,0,0,.55); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; cursor: pointer; color: var(--muted);
+  transition: color .15s, transform .1s;
+}
+.fav-btn:hover { transform: scale(1.1); }
+.fav-btn.on { color: #ff4d6d; }
+
+/* Barres enregistrées */
+.saved-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.saved-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.saved-card canvas { width: 100%; height: auto; border-radius: 6px; background: #000; }
+.saved-card .name { font-size: 13px; font-weight: 700; }
+.saved-card .meta { font-size: 10.5px; color: var(--muted); }
+.saved-card .actions { display: flex; gap: 8px; }
+.saved-card .actions button {
+  flex: 1; padding: 7px; border-radius: 7px; font-size: 11px; font-weight: 700;
+  cursor: pointer; font-family: var(--ui-font); text-transform: uppercase; letter-spacing: .03em;
+  border: 1px solid var(--border); background: var(--surface2); color: var(--text); transition: background .15s;
+}
+.saved-card .actions button.danger { color: #e0554a; border-color: #4a2c28; }
+.saved-card .actions button:hover { background: var(--border); }
+.empty-state { text-align: center; padding: 60px 20px; color: var(--label); }
+.empty-state .e { font-size: 34px; margin-bottom: 10px; }
+.empty-state .t { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.empty-state .d { font-size: 12.5px; max-width: 340px; margin: 0 auto; line-height: 1.5; }
+.quota-note { font-size: 11.5px; color: var(--muted); margin-bottom: 16px; }
+
+/* Paramètres */
+.settings-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; max-width: 480px; }
+.settings-card .row-s { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.settings-card .row-s:last-child { border-bottom: none; }
+.settings-card .row-s .l { font-size: 13.5px; font-weight: 600; }
+.settings-card .row-s .l small { display: block; font-size: 11px; color: var(--muted); font-weight: 400; margin-top: 2px; }
+.settings-card .row-s button {
+  padding: 7px 14px; border-radius: 8px; border: 1px solid #4a2c28; background: transparent;
+  color: #e0554a; font-family: var(--ui-font); font-weight: 700; font-size: 11.5px; cursor: pointer;
+}
+
+/* ABONNEMENT / PLANS */
+.plan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 1150px; }
+.billing-toggle {
+  background-color: #0F1419; border-radius: 999px; display: flex;
+  padding: 4px; width: 280px; margin: 0 auto 24px;
+}
+body.theme-light .billing-toggle { background-color: var(--surface2); }
+.billing-toggle button {
+  flex: 1; padding: 10px 18px; border: none; border-radius: 999px;
+  font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500;
+  cursor: pointer; background: transparent; color: #545D65;
+  transition: all .2s ease;
+}
+body.theme-light .billing-toggle button { color: var(--label); }
+.billing-toggle button.active {
+  background-color: var(--text); color: var(--bg);
+  box-shadow: 0 2px 4px rgba(0,0,0,.15);
+}
+.plan-card {
+  background: #13161B; border: 1px solid transparent; border-radius: 16px;
+  padding: 25px 30px; width: 100%; box-sizing: border-box;
+  display: flex; flex-direction: column; position: relative;
+  font-family: 'Inter', sans-serif;
+}
+body.theme-light .plan-card { background: var(--surface); }
+.plan-card.current { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.plan-card.highlight { border: 1px solid var(--accent); }
+.plan-recommended-badge {
+  position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%);
+  background-color: var(--accent); color: #000; padding: 5px 14px; border-radius: 999px;
+  font-size: 13px; font-weight: 600; font-family: 'Inter', sans-serif;
+  display: flex; align-items: center; gap: 6px;
+  box-shadow: 0 4px 6px rgba(0,0,0,.1); white-space: nowrap;
+}
+.plan-recommended-badge svg { width: 14px; height: 14px; fill: currentColor; flex-shrink: 0; }
+.plan-name-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+.plan-name { color: var(--accent); font-size: 20px; font-weight: 600; font-family: 'Inter', sans-serif; }
+.plan-badge { font-size: 11px; background: var(--surface2); color: var(--text); padding: 3px 10px; border-radius: 999px; font-weight: 600; font-family: 'Inter', sans-serif; }
+.plan-price-wrapper { margin-bottom: 6px; display: flex; flex-direction: column; width: 100%; }
+.plan-price {
+  font-size: 36px; font-weight: 400; font-family: 'Inter', sans-serif;
+  display: flex; align-items: baseline; gap: 8px; line-height: 1; margin-bottom: 6px;
+}
+.plan-price span { font-size: 13px; color: var(--label); font-weight: 400; }
+.plan-price-note { font-size: 13px; color: var(--label); font-weight: 400; }
+.plan-tagline { font-size: 13px; color: var(--label); font-family: 'Inter', sans-serif; margin-bottom: 20px; }
+.plan-btn {
+  background-color: var(--text); color: var(--bg); border: 1px solid var(--text);
+  border-radius: 999px; padding: 12px; font-size: 15px; font-weight: 600;
+  width: 100%; box-sizing: border-box; cursor: pointer; margin-bottom: 25px;
+  font-family: 'Inter', sans-serif; transition: opacity .15s;
+}
+.plan-btn:hover { opacity: .9; }
+.plan-btn:disabled { opacity: .5; cursor: default; }
+.plan-features {
+  list-style: none; display: flex; flex-direction: column; gap: 12px;
+  width: 100%; margin: 0; padding: 0; flex: 1;
+}
+.plan-features li {
+  display: flex; align-items: flex-start; gap: 12px;
+  color: var(--label); font-size: 14px; line-height: 1.3;
+  font-family: 'Inter', sans-serif; width: 100%; text-align: left;
+}
+.plan-features li svg {
+  color: var(--accent); stroke: var(--accent); width: 18px; height: 18px;
+  flex-shrink: 0; margin-top: 1px; fill: none; stroke-width: 2;
+}
+@media (max-width: 899px) {
+  .plan-grid { grid-template-columns: 1fr; justify-items: stretch; }
+  .plan-card { max-width: 100%; }
+}
+
+.save-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px 20px; background: transparent; color: var(--text);
+  border: 1px solid var(--border); border-radius: 100px;
+  font-family: var(--ui-font); font-weight: 700; font-size: 13.5px;
+  cursor: pointer; transition: background .15s;
+}
+.save-btn:hover { background: var(--surface2); }
+.dl-wrap { display: flex; justify-content: center; gap: 10px; padding: 8px 0; flex-wrap: wrap; }
+
+@media (min-width: 900px) {
+  .sidebar { display: flex; }
+  .hamburger { display: none; }
+}
+@media (max-width: 899px) {
+  .gen-layout { grid-template-columns: 1fr; width: 100%; max-width: 100%; }
+  .page { padding: 20px 16px 40px; overflow-x: hidden; }
+  #page-generateur.active { height: auto; overflow: visible; padding: 20px 16px 40px; max-width: 1180px; margin: 0 auto; overflow-x: hidden; }
+  #page-generateur .gen-layout { height: auto; padding-left: 0; }
+  #page-generateur .gen-col { height: auto; overflow-y: visible; overflow-x: hidden; padding: 0; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; }
+  #page-generateur .gen-col:last-child { border-left: none; padding: 20px 0 0 0; border-top: 1px solid var(--border); margin-top: 8px; }
+  .card, .p-card-group, .p-card { width: 100%; max-width: 100%; box-sizing: border-box; }
+  .row, .slider-row, .color-section, .zone-btns { min-width: 0; }
+}
+
+/* DRAWER (menu hamburger) */
+.drawer-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.55);
+  opacity: 0; pointer-events: none;
+  transition: opacity .25s;
+  z-index: 200;
+}
+.drawer-overlay.open { opacity: 1; pointer-events: auto; }
+.drawer {
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: 300px; max-width: 85vw;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  transform: translateX(-100%);
+  transition: transform .3s ease;
+  z-index: 201;
+  display: flex; flex-direction: column;
+}
+.drawer.open { transform: translateX(0); }
+.drawer-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.drawer-head .t { font-weight: 800; font-size: 13px; }
+.drawer-head button {
+  background: none; border: none;
+  color: var(--muted); font-size: 18px; cursor: pointer;
+  padding: 4px; transition: color .15s;
+}
+.drawer-head button:hover { color: var(--text); }
+.drawer-body {
+  overflow-y: auto; padding: 8px 0;
+  display: flex; flex-direction: column; gap: 0;
+}
+.drawer-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 24px;
+  border-radius: 0;
+  cursor: pointer;
+  color: var(--label);
+  font-size: 14px;
+  font-weight: 500;
+  border-left: 3px solid transparent;
+  transition: all .2s;
+}
+.drawer-item:hover { color: var(--text); }
+.drawer-item.active { background: var(--surface); color: var(--text); border-left-color: var(--text); }
+.drawer-item .tag {
+  font-size: 9px; background: var(--border);
+  padding: 2px 6px; border-radius: 5px; margin-left: auto;
+  color: var(--muted);
+}
+
+/* STYLE SELECTOR (page pleine) */
+.style-selector {
+  display: none;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px 20px 40px;
+  max-width: 960px;
+  margin: 0 auto;
+  width: 100%;
+}
+.style-selector.active { display: flex; }
+.style-selector-header {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 4px;
+}
+.style-selector-header h2 {
+  font-size: 20px; font-weight: 800;
+  letter-spacing: -.02em;
+}
+.back-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 14px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--ui-font);
+  transition: background .15s;
+}
+.back-btn:hover { background: var(--border); }
+.style-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.style-card {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px;
+  cursor: pointer;
+  display: flex; flex-direction: column; gap: 8px;
+  transition: border-color .15s, background .15s;
+}
+.style-card:hover { background: var(--surface); }
+.style-card.on { border-color: var(--text); background: var(--surface); }
+.style-card canvas {
+  width: 100%; height: auto; display: block;
+  border-radius: 4px; background: #000;
+  image-rendering: pixelated;
+}
+.style-card .name {
+  font-size: 11px; font-weight: 600;
+  text-align: center; color: var(--label);
+}
+.style-card.on .name { color: var(--text); }
+.style-card .desc {
+  font-size: 10px; text-align: center; color: var(--label); opacity: .75;
+}
+
+/* MAIN (éditeur) */
+.main {
+  display: block;
+  padding: 24px 20px 40px;
+  max-width: 960px;
+  margin: 0 auto;
+  width: 100%;
+}
+.main.hidden { display: none; }
+
+.preview-wrap {
+  border-radius: var(--radius);
+  background: #000;
+  padding: 28px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 170px;
+  transition: background .2s;
+  margin-bottom: 14px;
+  position: relative;
+  overflow: hidden;
+}
+/* Grille (8 rangées, cellules pleine taille) : plus haute que les autres styles.
+   On limite la hauteur affichée et on ajoute un scroll interne, uniquement pour cette barre. */
+.preview-wrap.tall-preview {
+  max-height: 480px;
+  overflow-y: auto;
+  align-items: flex-start;
+}
+#previewCanvas { width: 100%; max-width: 640px; height: auto; display: block; image-rendering: pixelated; image-rendering: crisp-edges; user-select: none; -webkit-user-select: none; -webkit-user-drag: none; pointer-events: none; }
+.preview-watermark {
+  position: absolute; inset: 0; pointer-events: none; z-index: 5;
+  display: flex; flex-wrap: wrap; align-content: space-around; justify-content: space-around;
+  overflow: hidden; opacity: .5;
+}
+.preview-watermark span {
+  color: #fff; font-size: 13px; font-weight: 800; letter-spacing: .5px;
+  transform: rotate(-28deg); white-space: nowrap; text-shadow: 0 0 3px rgba(0,0,0,.6);
+}
+.preview-watermark.on-light span {
+  color: #000; text-shadow: 0 0 3px rgba(255,255,255,.7);
+}
+
+.controls { display: flex; flex-direction: column; gap: 12px; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 16px;
+}
+body:not(.theme-light) .card { background: #000000; border-color: #1a1a1e; }
+.card-title {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 17px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text); margin-bottom: 10px;
+}
+.card-title-icon { flex-shrink: 0; color: var(--text); }
+.card-title-icon-dot { fill: #000000; stroke: #ffffff; }
+body.theme-light .card-title-icon-dot { fill: #ffffff; stroke: var(--text); }
+.sections-container { display: flex; flex-direction: column; gap: 5px; }
+.setting-row {
+  background-color: var(--surface2); border: 1px solid var(--border); border-radius: 14px;
+  padding: 9px 14px; display: flex; align-items: center; gap: 12px;
+}
+body:not(.theme-light) .setting-row { background-color: #09090A; border-color: #1a1a1e; }
+.icon-box {
+  background-color: var(--surface2); border: 1px solid var(--border); border-radius: 9px;
+  width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; color: var(--text);
+}
+body:not(.theme-light) .icon-box { background-color: #09090A; border-color: #22222a; }
+.t-icon { font-family: "Times New Roman", Times, serif; font-weight: 800; font-size: 19px; line-height: 1; }
+.percent-icon { font-size: 14px; font-weight: 600; }
+.setting-content { display: flex; flex-direction: column; gap: 4px; flex-grow: 1; min-width: 0; }
+.input-row { display: flex; align-items: center; gap: 12px; width: 100%; }
+.setting-label { font-size: 11.5px; color: var(--label); font-weight: 500; }
+.setting-value { font-size: 13px; font-weight: 600; color: var(--text); }
+.text-input, .percent-box {
+  background-color: var(--surface2); border: 1px solid var(--border); color: var(--text);
+  font-size: 14px; font-weight: 500; border-radius: 8px; outline: none;
+  transition: border-color .2s ease;
+}
+body:not(.theme-light) .text-input, body:not(.theme-light) .percent-box { background-color: #151618; border-color: #27272a; }
+.text-input { padding: 10px 14px; width: 100%; flex: 1; min-width: 0; }
+.text-input:focus { border-color: #4a4a52; }
+.percent-box { padding: 8px 12px; min-width: 48px; text-align: center; }
+.btn-changer {
+  background-color: transparent; border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 12px; color: var(--text); font-size: 13px; font-weight: 500;
+  display: flex; align-items: center; gap: 6px; cursor: pointer;
+  transition: background-color .2s ease; flex-shrink: 0;
+}
+body:not(.theme-light) .btn-changer { border-color: #27272a; }
+.btn-changer:hover { background-color: var(--surface2); }
+body:not(.theme-light) .btn-changer:hover { background-color: #1a1a20; }
+.color-picker {
+  background-color: transparent; border: 1px solid var(--border); border-radius: 8px;
+  padding: 6px 8px; display: flex; align-items: center; gap: 8px; cursor: pointer; flex-shrink: 0;
+}
+body:not(.theme-light) .color-picker { border-color: #27272a; }
+.color-square { width: 18px; height: 18px; border-radius: 4px; padding: 0; border: none; cursor: pointer; background: none; }
+.range-slider {
+  -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 2px;
+  outline: none; background: var(--border); cursor: pointer; flex: 1; min-width: 0;
+}
+body:not(.theme-light) .range-slider { background: #27272a; }
+.range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%;
+  background: #ffffff; cursor: pointer; box-shadow: 0 0 8px rgba(0,0,0,.5); transition: transform .1s ease;
+}
+.range-slider::-webkit-slider-thumb:hover { transform: scale(1.1); }
+.range-slider::-moz-range-thumb {
+  width: 18px; height: 18px; border-radius: 50%; background: #ffffff; cursor: pointer;
+  box-shadow: 0 0 8px rgba(0,0,0,.5); border: none;
+}
+.percent-wrapper { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.percent-symbol { font-size: 14px; color: var(--label); font-weight: 600; }
+.card-title-row {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 8px; margin-bottom: 14px;
+}
+.card-title-row .card-title { margin-bottom: 0; }
+.card-title-row .tog-wrap { margin: 0; }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+
+/* --- PANNEAU PERSONNALISATION (cartes pixel-perfect, réf. Gemini) --- */
+.right-panel-title { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
+
+.icon-svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+/* Groupe de cartes collées (bordures qui se chevauchent de -1px, coins 14px conservés) */
+.p-card-group { display: flex; flex-direction: column; gap: 0; margin-bottom: 16px; }
+.p-card-group:last-of-type { margin-bottom: 0; }
+.p-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-top: -1px;
+  position: relative;
+  z-index: 1;
+}
+body:not(.theme-light) .p-card { border-color: #1c1c1e; }
+.p-card:hover { z-index: 2; }
+.p-card-group .p-card:first-child { margin-top: 0; }
+
+/* Contenu "couleur" : header + encadrement, empilés */
+.color-layout { display: flex; flex-direction: column; gap: 12px; }
+.item-header { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text); font-weight: 400; }
+.item-header .icon-svg { width: 18px; height: 18px; stroke-width: 1.5; }
+
+/* Encadrement type "dropdown-box" contenant pastille + hex (+ contrôles associés) */
+.color-pick-container {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; row-gap: 8px;
+  background-color: var(--bg); padding: 10px 12px;
+  border-radius: 10px; border: 1px solid var(--border);
+}
+body:not(.theme-light) .color-pick-container { border-color: #2c2c2e; }
+.color-pick-container .gradient-controls,
+.color-pick-container .zone-chip-row { margin-left: auto; margin-top: 0; }
+.color-box { width: 20px; height: 20px; border-radius: 4px; flex-shrink: 0; cursor: pointer; border: 1px solid var(--border); position: relative; }
+.color-box input[type="color"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: none; padding: 0; }
+.hex-input { background: transparent; border: none; color: var(--text); font-size: 14px; font-weight: 500; letter-spacing: .3px; width: 72px; outline: none; font-family: var(--ui-font); }
+.arrow-icon { color: var(--label); font-size: 12px; }
+.gradient-controls { display: flex; align-items: center; gap: 6px; }
+.gradient-label { font-size: 9px; color: var(--label); text-transform: uppercase; margin-right: 2px; letter-spacing: .05em; }
+.grad-switch {
+  width: 28px; height: 16px; border-radius: 10px; background: var(--border);
+  position: relative; cursor: pointer; border: none; flex-shrink: 0; padding: 0;
+  transition: background .2s;
+}
+.grad-switch::after {
+  content: ''; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px;
+  border-radius: 50%; background: var(--text); transition: transform .2s;
+}
+.grad-switch.on { background: var(--toggle-on); }
+.grad-switch.on::after { transform: translateX(12px); background: #fff; }
+.gradient-btn {
+  background: transparent; border: 1px solid var(--border); color: var(--label);
+  font-size: 10px; padding: 3px 8px; border-radius: 4px; cursor: pointer;
+  display: flex; align-items: center; gap: 4px; font-weight: 500; transition: all .2s;
+  font-family: var(--ui-font);
+}
+.gradient-btn:hover, .gradient-btn.active { background-color: var(--surface2); color: var(--text); }
+.gradient-btn:disabled { opacity: .35; cursor: default; pointer-events: none; }
+
+.zone-chip-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.zone-chip {
+  border: 1px solid var(--border); background: transparent; color: var(--label);
+  font-size: 10px; padding: 4px 9px; border-radius: 4px; cursor: pointer;
+  font-family: var(--ui-font); transition: all .2s;
+}
+.zone-chip:hover, .zone-chip.on { background-color: var(--surface2); color: var(--text); border-color: var(--text); }
+
+.upload-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.upload-info { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.upload-info .icon-svg { width: 20px; height: 20px; stroke-width: 1.8; color: var(--text); flex-shrink: 0; }
+.upload-texts { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.upload-texts span:first-child { font-size: 14px; font-weight: 400; color: var(--text); }
+.upload-texts span:last-child { font-size: 13px; color: #8e8e93; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px; }
+.btn-choose {
+  background: var(--bg); border: 1px solid var(--border); color: var(--text);
+  padding: 7px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;
+  font-family: var(--ui-font); flex-shrink: 0; transition: background .2s;
+}
+.btn-choose:hover { background-color: var(--surface2); }
+body:not(.theme-light) .btn-choose { border-color: #2c2c2e; }
+body:not(.theme-light) .btn-choose:hover { background-color: #1c1c1e; }
+.upload-del { background: none; border: none; color: var(--label); cursor: pointer; font-size: 12px; flex-shrink: 0; }
+.upload-del:hover { color: #e0554a; }
+.btn-download {
+  width: 100%; background-color: var(--text); color: var(--bg);
+  border: none; padding: 12px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600;
+  cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px;
+  transition: opacity .2s; font-family: var(--ui-font);
+}
+.btn-download:hover { opacity: .9; }
+.btn-download:disabled { opacity: .4; cursor: wait; }
+.btn-save {
+  width: 100%; background: transparent; color: var(--text); border: 1px solid var(--border);
+  padding: 11px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600;
+  cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px;
+  transition: background .2s; font-family: var(--ui-font); margin-bottom: 10px;
+}
+.btn-save:hover { background-color: var(--surface2); }
+
+.row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.row:last-child { margin-bottom: 0; }
+.lbl { font-size: 14px; font-weight: 500; color: var(--label); min-width: 72px; flex-shrink: 0; }
+
+.txt-inp {
+  flex: 1; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 7px 10px;
+  font-size: 13px; font-weight: 600; color: var(--text);
+  font-family: var(--ui-font); min-width: 0; transition: border-color .15s;
+}
+.txt-inp:focus { outline: none; border-color: var(--text); }
+
+.slider-row { display: flex; align-items: center; gap: 8px; flex: 1; }
+.slider-row input[type=range] { flex: 1; accent-color: var(--text); height: 3px; }
+.slider-num {
+  width: 48px; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 6px; font-size: 12px; font-weight: 700;
+  color: var(--text); text-align: center; font-family: var(--ui-font);
+}
+.slider-pct { font-size: 12px; font-weight: 700; color: var(--label); min-width: 36px; }
+
+.file-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.file-btn {
+  padding: 4px 10px; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; font-size: 14px; font-weight: 500;
+  cursor: pointer; color: var(--text); transition: background .15s; white-space: nowrap;
+}
+.file-btn:hover { background: var(--border); }
+input[type=file] { display: none; }
+.file-name { font-size: 10px; color: var(--muted); max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.del-btn { background: transparent; border: 1px solid #c0392b; color: #c0392b; padding: 3px 8px; border-radius: 5px; font-size: 10px; font-weight: 700; cursor: pointer; display: none; text-transform: uppercase; white-space: nowrap; }
+
+.color-section { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.color-group { display: flex; align-items: flex-end; gap: 6px; }
+.cpair { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.cpair span { font-size: 9px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+input[type=color] { width: 34px; height: 34px; border: 1px solid var(--border); border-radius: 7px; padding: 2px; cursor: pointer; background: none; }
+.swatch-solo { width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 6px; padding: 2px; cursor: pointer; background: none; }
+.grad-arrow { font-size: 12px; color: var(--muted); padding-bottom: 8px; transition: opacity .2s; }
+.c2w { transition: opacity .2s; } .c2w.dim { opacity: .25; pointer-events: none; }
+
+.tog-wrap { display: flex; flex-direction: column; gap: 6px; }
+.tog-label-sm { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--label); }
+.tog-sm { width: 28px; height: 15px; background: var(--border); border-radius: 8px; position: relative; border: none; cursor: pointer; transition: background .2s; flex-shrink: 0; }
+.tog-sm::after { content: ''; position: absolute; left: 2px; top: 1.5px; width: 12px; height: 12px; border-radius: 50%; background: #fff; transition: transform .2s; }
+.tog-sm.on { background: var(--toggle-on); } .tog-sm.on::after { transform: translateX(13px); }
+.dir-row { display: flex; gap: 4px; }
+.dir-btn { padding: 3px 7px; border-radius: 5px; border: 1px solid var(--border); background: transparent; font-size: 9px; font-weight: 700; cursor: pointer; color: var(--label); text-transform: uppercase; letter-spacing: .03em; transition: all .15s; }
+.dir-btn.on { background: var(--surface2); color: var(--text); border-color: var(--muted); }
+
+.zone-btns { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+.zone-btn { padding: 4px 9px; border-radius: 6px; border: 1px solid var(--border); background: transparent; font-size: 10px; font-weight: 600; cursor: pointer; color: var(--text); text-transform: uppercase; letter-spacing: .03em; display: flex; align-items: center; gap: 4px; transition: all .15s; }
+.zone-btn.on { background: var(--surface2); border-color: var(--muted); }
+
+/* DOWNLOAD */
+.dl-btn {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 40px; background: var(--text); color: var(--bg);
+  border: none; border-radius: 100px;
+  font-family: var(--ui-font); font-weight: 700; font-size: 15px;
+  letter-spacing: .02em; cursor: pointer;
+  transition: opacity .15s, transform .1s;
+  box-shadow: 0 4px 20px rgba(0,0,0,.3);
+}
+.dl-btn:hover { opacity: .85; transform: translateY(-1px); }
+.dl-btn:disabled { opacity: .4; cursor: wait; transform: none; }
+
+/* RESPONSIVE */
+@media (max-width: 640px) {
+  .grid-2 { grid-template-columns: 1fr; }
+  .main { padding: 16px 14px 32px; }
+  .preview-wrap { padding: 24px 14px; min-height: 140px; }
+  .card { padding: 14px; }
+  .lbl { min-width: 60px; font-size: 9px; }
+  .brand-name { display: none; }
+  .dl-btn { font-size: 14px; padding: 13px 32px; }
+  .drawer { width: 280px; }
+  .style-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <button class="hamburger" id="hamburgerBtn">☰</button>
+    <span class="brand-badge">PBG</span>
+    <div class="brand-sep"></div>
+    <span class="brand-name">Progress Bar Generator</span>
+  </div>
+  <div class="theme-toggle" id="themeWrap">
+    <span>Dark Mode</span>
+    <div class="toggle-switch-lg on" id="themeToggle"></div>
+  </div>
+</header>
+
+<!-- DRAWER (menu hamburger, mobile) -->
+<div class="drawer-overlay" id="drawerOverlay"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <span class="t">Menu</span>
+    <button id="closeDrawer">✕</button>
+  </div>
+  <div class="drawer-body" id="drawerNav"></div>
+  <div class="pro-card" style="margin:14px 20px 0;">
+    <div class="t"><svg class="pro-logo" viewBox="0 0 60 100" xmlns="http://www.w3.org/2000/svg"><rect x="20" y="2" width="20" height="12" rx="3" fill="#FFE600" stroke="#000" stroke-width="3"/><rect x="5" y="12" width="50" height="84" rx="11" fill="#FFE600" stroke="#000" stroke-width="3"/><path d="M32 22 L13 57 L27 57 L19 84 L47 46 L31 46 Z" fill="#000"/></svg> Mise à Niveau</div>
+    <div class="d">Automatisez vos tweets en quelques clics et accédez à plus de styles.</div>
+    <button id="proBtnDrawer">Voir les offres</button>
+  </div>
+</div>
+
+<div class="app-shell">
+
+  <!-- SIDEBAR (persistante, desktop) -->
+  <aside class="sidebar">
+    <nav class="sidebar-nav" id="sidebarNav"></nav>
+    <div class="sidebar-pro">
+      <div class="pro-card">
+        <div class="t"><svg class="pro-logo" viewBox="0 0 60 100" xmlns="http://www.w3.org/2000/svg"><rect x="20" y="2" width="20" height="12" rx="3" fill="#FFE600" stroke="#000" stroke-width="3"/><rect x="5" y="12" width="50" height="84" rx="11" fill="#FFE600" stroke="#000" stroke-width="3"/><path d="M32 22 L13 57 L27 57 L19 84 L47 46 L31 46 Z" fill="#000"/></svg> Mise à Niveau</div>
+        <div class="d">Automatisez vos tweets en quelques clics et accédez à plus de styles.</div>
+        <button id="proBtnSidebar">Voir les offres</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="content" id="content">
+
+    <!-- PAGE : GÉNÉRATEUR -->
+    <section class="page active" id="page-generateur">
+      <div class="gen-layout">
+        <div class="gen-col">
+
+          <div class="preview-wrap" id="previewWrap">
+            <canvas id="previewCanvas"></canvas>
+            <div class="preview-watermark" id="previewWatermark" style="display:none;"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">
+              <svg class="card-title-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="6" x2="21" y2="6"></line><circle class="card-title-icon-dot" cx="8" cy="6" r="2.5"></circle>
+                <line x1="3" y1="12" x2="21" y2="12"></line><circle class="card-title-icon-dot" cx="16" cy="12" r="2.5"></circle>
+                <line x1="3" y1="18" x2="21" y2="18"></line><circle class="card-title-icon-dot" cx="8" cy="18" r="2.5"></circle>
+              </svg>
+              Général
+            </div>
+            <div class="sections-container">
+              <div class="setting-row">
+                <div class="icon-box">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                </div>
+                <div class="setting-content">
+                  <span class="setting-label">Style</span>
+                  <span class="setting-value" id="currentStyleName">Twitter (X)</span>
+                </div>
+                <button class="btn-changer" id="changeStyleBtn">
+                  Changer
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                </button>
+              </div>
+
+              <div class="setting-row" id="titleRow">
+                <div class="icon-box t-icon">T</div>
+                <div class="setting-content">
+                  <span class="setting-label">Texte</span>
+                  <div class="input-row">
+                    <input type="text" class="text-input" id="titleInp" value="Progress Bar Generator" maxlength="44">
+                    <div class="color-picker">
+                      <input type="color" class="color-square" id="txtColor" value="#ffffff">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="setting-row">
+                <div class="icon-box percent-icon">%</div>
+                <div class="setting-content">
+                  <span class="setting-label">Pourcentage</span>
+                  <div class="input-row">
+                    <input type="range" id="pctSlider" min="0" max="100" value="50" step="1" class="range-slider">
+                    <div class="percent-wrapper">
+                      <input type="number" id="pctBox" min="0" max="100" value="50" class="percent-box">
+                      <span class="percent-symbol" id="pctVal">%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="setting-row" id="pctDisplayRow">
+                <div class="icon-box">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </div>
+                <span class="setting-value" style="flex:1;">Afficher le pourcentage</span>
+                <button class="tog-sm on" id="showPctTog"></button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="gen-col">
+          <div class="right-panel-title">Personnalisation</div>
+
+          <!-- GROUPE 1 : COULEURS -->
+          <div class="p-card-group">
+            <!-- Couleur de remplissage -->
+            <div class="p-card" id="fillCard">
+              <div class="color-layout">
+                <div class="item-header">
+                  <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 2 L18 10 Q16 16 15 17.5 L9 17.5 Q8 16 6 10 Z"></path><line x1="12" y1="2" x2="12" y2="10"></line><circle cx="12" cy="11.5" r="1.5"></circle><path d="M8 19.5 Q12 21.5 16 19.5"></path><path d="M8 19.5 L8 21 Q12 23 16 21 L16 19.5"></path></svg>
+                  <span>Couleur de remplissage</span>
+                </div>
+                <div class="color-pick-container" id="fillColorCtrl">
+                  <div class="color-box" style="background-color:#FFE000;" id="fC1Box"><input type="color" id="fC1" value="#FFE000"></div>
+                  <input type="text" value="#FFE000" class="hex-input" id="fC1Text">
+                  <span class="arrow-icon" id="fArrow" style="opacity:.3">→</span>
+                  <div class="color-box" style="background-color:#FF8C00;opacity:.3;" id="fC2Box"><input type="color" id="fC2" value="#FF8C00"></div>
+                  <input type="text" value="#FF8C00" class="hex-input" id="fC2Text" style="opacity:.3;">
+                  <div class="gradient-controls">
+                    <span class="gradient-label">Dégradé</span>
+                    <button class="grad-switch" id="fTog"></button>
+                    <div class="dir-row" id="fDirs">
+                      <button class="gradient-btn" data-d="h" disabled>↔ HORIZ</button>
+                      <button class="gradient-btn" data-d="v" disabled>↕ VERT</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Couleur de la partie vide -->
+            <div class="p-card" id="emptyCard">
+              <div class="color-layout">
+                <div class="item-header">
+                  <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 2 L18 10 Q16 16 15 17.5 L9 17.5 Q8 16 6 10 Z"></path><line x1="12" y1="2" x2="12" y2="10"></line><circle cx="12" cy="11.5" r="1.5"></circle><path d="M8 19.5 Q12 21.5 16 19.5"></path><path d="M8 19.5 L8 21 Q12 23 16 21 L16 19.5"></path></svg>
+                  <span>Couleur de la partie vide</span>
+                </div>
+                <div class="color-pick-container">
+                  <div class="color-box" style="background-color:#ffffff;" id="eColorBox"><input type="color" id="eCustomCol" value="#ffffff"></div>
+                  <input type="text" value="#ffffff" class="hex-input" id="eColorText">
+                  <div class="zone-chip-row" id="emptyColorRow">
+                    <button class="zone-chip on" data-v="#ffffff">Blanc</button>
+                    <button class="zone-chip" data-v="#000000">Noir</button>
+                    <button class="zone-chip" data-v="#1a1a1a">Sombre</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Couleur du contour -->
+            <div class="p-card" id="borderCard">
+              <div class="color-layout">
+                <div class="item-header">
+                  <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 2 L18 10 Q16 16 15 17.5 L9 17.5 Q8 16 6 10 Z"></path><line x1="12" y1="2" x2="12" y2="10"></line><circle cx="12" cy="11.5" r="1.5"></circle><path d="M8 19.5 Q12 21.5 16 19.5"></path><path d="M8 19.5 L8 21 Q12 23 16 21 L16 19.5"></path></svg>
+                  <span>Couleur du contour</span>
+                </div>
+                <div class="color-pick-container" id="borderColorCtrl">
+                  <div class="color-box" style="background-color:#FFE000;" id="bC1Box"><input type="color" id="bC1" value="#FFE000"></div>
+                  <input type="text" value="#FFE000" class="hex-input" id="bC1Text">
+                  <span class="arrow-icon" id="bArrow" style="opacity:.3">→</span>
+                  <div class="color-box" style="background-color:#FF0080;opacity:.3;" id="bC2Box"><input type="color" id="bC2" value="#FF0080"></div>
+                  <input type="text" value="#FF0080" class="hex-input" id="bC2Text" style="opacity:.3;">
+                  <div class="gradient-controls">
+                    <span class="gradient-label">Dégradé</span>
+                    <button class="grad-switch" id="bTog"></button>
+                    <div class="dir-row" id="bDirs">
+                      <button class="gradient-btn" data-d="h" disabled>↔ HORIZ</button>
+                      <button class="gradient-btn" data-d="v" disabled>↕ VERT</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Couleur de fond -->
+            <div class="p-card" id="bgCard">
+              <div class="color-layout">
+                <div class="item-header">
+                  <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 2 L18 10 Q16 16 15 17.5 L9 17.5 Q8 16 6 10 Z"></path><line x1="12" y1="2" x2="12" y2="10"></line><circle cx="12" cy="11.5" r="1.5"></circle><path d="M8 19.5 Q12 21.5 16 19.5"></path><path d="M8 19.5 L8 21 Q12 23 16 21 L16 19.5"></path></svg>
+                  <span>Couleur de fond</span>
+                </div>
+                <div class="color-pick-container" id="bgColorCtrl">
+                  <div class="color-box" style="background-color:#000000;" id="bgColorBox"><input type="color" id="bgCol" value="#000000"></div>
+                  <input type="text" value="#000000" class="hex-input" id="bgColorText">
+                  <div class="zone-chip-row" id="bgTransparentRow">
+                    <button class="zone-chip" id="bgTransparentChip" type="button">Fond transparent (PNG)</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- GROUPE 2 : IMAGES -->
+          <div class="p-card-group">
+            <div class="p-card">
+              <div class="upload-row" id="logoCard">
+                <div class="upload-info">
+                  <svg class="icon-svg" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                  <div class="upload-texts"><span>Logo (optionnel)</span><span id="logoName">Aucun logo</span></div>
+                </div>
+                <label class="btn-choose" for="logoFile">Choisir</label>
+                <input type="file" id="logoFile" accept="image/*" style="display:none;">
+                <button class="upload-del" id="delLogo" style="display:none;">✕</button>
+              </div>
+            </div>
+            <div class="p-card">
+              <div class="upload-row">
+                <div class="upload-info">
+                  <svg class="icon-svg" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                  <div class="upload-texts"><span>Image de remplissage</span><span id="fillName">Aucune image</span></div>
+                </div>
+                <label class="btn-choose" for="fillFile">Choisir</label>
+                <input type="file" id="fillFile" accept="image/*" style="display:none;">
+                <button class="upload-del" id="delFill" style="display:none;">✕</button>
+              </div>
+            </div>
+            <div class="p-card">
+              <div class="upload-row">
+                <div class="upload-info">
+                  <svg class="icon-svg" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                  <div class="upload-texts"><span>Image de la partie vide</span><span id="emptyName">Aucune image</span></div>
+                </div>
+                <label class="btn-choose" for="emptyFile">Choisir</label>
+                <input type="file" id="emptyFile" accept="image/*" style="display:none;">
+                <button class="upload-del" id="delEmpty" style="display:none;">✕</button>
+              </div>
+            </div>
+            <div class="p-card">
+              <div class="upload-row">
+                <div class="upload-info">
+                  <svg class="icon-svg" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                  <div class="upload-texts"><span>Image de contour</span><span id="borderName">Aucune image</span></div>
+                </div>
+                <label class="btn-choose" for="borderFile">Choisir</label>
+                <input type="file" id="borderFile" accept="image/*" style="display:none;">
+                <button class="upload-del" id="delBorder" style="display:none;">✕</button>
+              </div>
+            </div>
+            <div class="p-card">
+              <div class="upload-row">
+                <div class="upload-info">
+                  <svg class="icon-svg" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                  <div class="upload-texts"><span>Image de fond</span><span id="bgFileName">Aucune image</span></div>
+                </div>
+                <label class="btn-choose" for="bgFile">Choisir</label>
+                <input type="file" id="bgFile" accept="image/*" style="display:none;">
+                <button class="upload-del" id="delBg" style="display:none;">✕</button>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn-save" id="saveBarBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+            Enregistrer cette barre
+          </button>
+          <button class="btn-download" id="dlBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Télécharger (PNG HD)
+          </button>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE : STYLES DE BARRES -->
+    <section class="page" id="page-styles">
+      <div class="page-header">
+        <h1>Styles de barres</h1>
+        <p>Choisissez un style parmi les 17 disponibles</p>
+      </div>
+      <div class="style-grid" id="styleGrid"></div>
+    </section>
+
+    <!-- PAGE : FAVORIS -->
+    <section class="page" id="page-favoris">
+      <div class="page-header">
+        <h1>Favoris</h1>
+        <p>Les styles que vous avez mis en favori</p>
+      </div>
+      <div class="style-grid" id="favGrid"></div>
+    </section>
+
+    <!-- PAGE : BARRES ENREGISTRÉES -->
+    <section class="page" id="page-saved">
+      <div class="page-header">
+        <h1>Barres enregistrées</h1>
+        <p>Vos configurations sauvegardées (couleurs, texte, style)</p>
+      </div>
+      <div class="quota-note" id="savedQuota"></div>
+      <div class="saved-grid" id="savedGrid"></div>
+    </section>
+
+    <!-- PAGE : PARAMÈTRES -->
+    <section class="page" id="page-settings">
+      <div class="page-header">
+        <h1>Paramètres</h1>
+        <p>Gérez vos préférences et vos données locales</p>
+      </div>
+      <div class="settings-card">
+        <div class="row-s">
+          <div class="l">Favoris<small>Réinitialise la liste des styles favoris</small></div>
+          <button id="resetFavBtn">Effacer</button>
+        </div>
+        <div class="row-s">
+          <div class="l">Barres enregistrées<small>Supprime toutes vos configurations sauvegardées</small></div>
+          <button id="resetSavedBtn">Effacer</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE : AUTOMATISATION (réservée au plan Pro) -->
+    <section class="page" id="page-automation">
+      <div class="page-header">
+        <h1>Automatisation</h1>
+        <p>Publiez vos barres automatiquement sur X (Twitter)</p>
+      </div>
+      <div id="automationBody"></div>
+    </section>
+
+    <!-- PAGE : ABONNEMENT -->
+    <section class="page" id="page-abonnement">
+      <div class="page-header">
+        <h1>Abonnement</h1>
+        <p>Choisissez le plan adapté à votre usage</p>
+      </div>
+      <div class="billing-toggle" id="billingToggle">
+        <button class="billing-opt active" data-cycle="monthly">Mensuel</button>
+        <button class="billing-opt" data-cycle="annual">Annuel</button>
+      </div>
+      <div class="plan-grid" id="planGrid"></div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+// --- SUPABASE (auth + automatisation) ---
+// La "publishable key" (anciennement "anon key") est faite pour être visible
+// côté navigateur — protégée par les règles RLS côté base, pas un secret.
+const SUPABASE_URL = 'https://vttfcxythgoyubvvtlwy.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_9SWNSbdRg97Ejtm8e1Kg7A_kQ0mrAEX';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// --- STOCKAGE DES IMAGES (Supabase Storage, bucket "bar-images") ---
+// Les images en mémoire (imgLogo, imgFill, ...) sont des <img> dont le src est une data-URL
+// (voir loadImg plus bas). Pour les persister, on reconvertit cette data-URL en Blob puis on
+// l'upload dans le bucket, sous le dossier de l'utilisateur connecté. Renvoie l'URL publique,
+// ou null si pas connecté / pas d'image / échec d'upload.
+async function dataUrlToBlob(dataUrl){
+  const res = await fetch(dataUrl);
+  return res.blob();
+}
+async function uploadImageIfAny(img, slot){
+  if(!img || !currentSession) return null;
+  try{
+    const blob = await dataUrlToBlob(img.src);
+    const ext = (blob.type.split('/')[1] || 'png').split('+')[0];
+    const filePath = `${currentSession.user.id}/${slot}/${Date.now()}.${ext}`;
+    const { error } = await supabaseClient.storage.from('bar-images').upload(filePath, blob, { contentType: blob.type, upsert: false });
+    if(error){ console.error('Upload image échoué:', error); return null; }
+    return supabaseClient.storage.from('bar-images').getPublicUrl(filePath).data.publicUrl;
+  }catch(e){ console.error('Upload image échoué:', e); return null; }
+}
+async function uploadFileToStorage(file, slot){
+  if(!file || !currentSession) return null;
+  try{
+    const ext = (file.name.split('.').pop() || 'png').toLowerCase();
+    const filePath = `${currentSession.user.id}/${slot}/${Date.now()}.${ext}`;
+    const { error } = await supabaseClient.storage.from('bar-images').upload(filePath, file, { contentType: file.type, upsert: false });
+    if(error){ console.error('Upload image échoué:', error); return null; }
+    return supabaseClient.storage.from('bar-images').getPublicUrl(filePath).data.publicUrl;
+  }catch(e){ console.error('Upload image échoué:', e); return null; }
+}
+function loadImageFromUrl(url){
+  return new Promise((resolve)=>{
+    if(!url) { resolve(null); return; }
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+}
+
+let currentSession = null;
+
+async function initAuth(){
+  const { data } = await supabaseClient.auth.getSession();
+  currentSession = data.session;
+  supabaseClient.auth.onAuthStateChange((_event, session) => {
+    currentSession = session;
+    const page = document.getElementById('page-automation');
+    if(page && page.classList.contains('active') && typeof renderAutomation === 'function') renderAutomation();
+  });
+}
+initAuth();
+
+async function sendMagicLink(email){
+  const { error } = await supabaseClient.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: window.location.origin + window.location.pathname }
+  });
+  return error;
+}
+
+async function signOutUser(){
+  await supabaseClient.auth.signOut();
+}
+
+async function connectXAccount(){
+  if(!currentSession) return;
+  const btn = document.getElementById('connectXBtn');
+  if(btn){ btn.disabled = true; btn.textContent = 'Connexion...'; }
+  try{
+    const res = await fetch('/.netlify/functions/x-oauth-start', {
+      headers: { Authorization: `Bearer ${currentSession.access_token}` }
+    });
+    if(!res.ok) throw new Error('start failed');
+    const { redirectUrl } = await res.json();
+    window.location.href = redirectUrl;
+  }catch(e){
+    alert('Impossible de démarrer la connexion X, réessaie.');
+    if(btn){ btn.disabled = false; btn.textContent = 'Connecter mon compte X'; }
+  }
+}
+
+async function fetchXAccounts(){
+  if(!currentSession) return [];
+  const { data, error } = await supabaseClient
+    .from('x_accounts')
+    .select('id, x_username, created_at')
+    .order('created_at', { ascending: false });
+  if(error){ console.error(error); return []; }
+  return data;
+}
+
+async function fetchAutomations(){
+  if(!currentSession) return [];
+  const { data, error } = await supabaseClient
+    .from('automations')
+    .select('*, x_accounts(x_username)')
+    .order('created_at', { ascending: false });
+  if(error){ console.error(error); return []; }
+  return data;
+}
+
+// Construit la ligne "automations" à partir du payload du formulaire.
+// Partagée entre création (insert) et modification/recalibrage (update) pour
+// ne jamais avoir deux logiques différentes qui divergent avec le temps.
+function buildAutomationRow(payload){
+  const row = {
+    x_account_id: payload.x_account_id,
+    style: payload.style,
+    fill_color_1: payload.fill_color_1,
+    mode: payload.mode,
+    nom_evenement: payload.nom_evenement,
+    template_texte: payload.template_texte,
+    frequence_heures: payload.frequence_heures,
+    // On vide explicitement les champs du mode non utilisé : évite de garder
+    // une ancienne date/valeur fantôme en base si l'utilisateur recalibre une
+    // automatisation en changeant de mode (date <-> valeur).
+    date_debut: payload.mode === 'date' ? payload.date_debut : null,
+    date_fin: payload.mode === 'date' ? payload.date_fin : null,
+    valeur_actuelle: payload.mode === 'valeur' ? payload.valeur_actuelle : null,
+    objectif: payload.mode === 'valeur' ? payload.objectif : null,
+  };
+  if(payload.logo_url) row.logo_url = payload.logo_url;
+  if(payload.fill_image_url) row.fill_image_url = payload.fill_image_url;
+  if(payload.border_image_url) row.border_image_url = payload.border_image_url;
+  if(payload.empty_image_url) row.empty_image_url = payload.empty_image_url;
+  if(payload.bg_image_url) row.bg_image_url = payload.bg_image_url;
+  // Personnalisation complète — reprise de la barre enregistrée sélectionnée,
+  // ou (en recalibrage) des valeurs déjà en base pour l'automatisation éditée.
+  if(payload.fill_color_2 !== undefined) row.fill_color_2 = payload.fill_color_2;
+  if(payload.fill_grad !== undefined) row.fill_grad = payload.fill_grad;
+  if(payload.fill_dir !== undefined) row.fill_dir = payload.fill_dir;
+  if(payload.border_color_1 !== undefined) row.border_color_1 = payload.border_color_1;
+  if(payload.border_color_2 !== undefined) row.border_color_2 = payload.border_color_2;
+  if(payload.border_grad !== undefined) row.border_grad = payload.border_grad;
+  if(payload.border_dir !== undefined) row.border_dir = payload.border_dir;
+  if(payload.bg_color !== undefined) row.bg_color = payload.bg_color;
+  if(payload.empty_color !== undefined) row.empty_color = payload.empty_color;
+  if(payload.text_color !== undefined) row.text_color = payload.text_color;
+  return row;
+}
+
+async function createAutomation(payload){
+  const row = buildAutomationRow(payload);
+  row.user_id = currentSession.user.id;
+  const { error } = await supabaseClient.from('automations').insert(row);
+  return error;
+}
+
+// Recalibrage d'une automatisation existante : met à jour la ligne en place
+// (mêmes id/created_at/derniere_publication) au lieu de la recréer à zéro.
+async function updateAutomation(id, payload){
+  const row = buildAutomationRow(payload);
+  const { error } = await supabaseClient.from('automations').update(row).eq('id', id);
+  return error;
+}
+
+async function toggleAutomationActive(id, actif){
+  await supabaseClient.from('automations').update({ actif }).eq('id', id);
+}
+
+async function deleteAutomation(id){
+  await supabaseClient.from('automations').delete().eq('id', id);
+}
+
+const g = id => document.getElementById(id);
+const titleInp=g('titleInp'), txtColor=g('txtColor');
+const pctSlider=g('pctSlider'), pctBox=g('pctBox'), pctVal=g('pctVal');
+const fC1=g('fC1'), fC2=g('fC2'), bC1=g('bC1'), bC2=g('bC2');
+const fTog=g('fTog'), bTog=g('bTog');
+const fC2Box=g('fC2Box'), fC2Text=g('fC2Text'), bC2Box=g('bC2Box'), bC2Text=g('bC2Text');
+const fArrow=g('fArrow'), bArrow=g('bArrow');
+const bgCol=g('bgCol'), canvas=g('previewCanvas'), previewWrap=g('previewWrap');
+let imgLogo=null, imgFill=null, imgBorder=null, imgEmpty=null, imgBg=null;
+let bgTransparent=false;
+let fillGrad=false, borderGrad=false, fillDir='h', borderDir='h';
+let showPct=true;
+function pctLabel(title, pct){ return showPct ? `${title||''} — ${pct}%` : (title||''); }
+let emptyColor='#ffffff';
+let currentStyle = 'default';
+
+const W=2000, H=400, L=49, T=41, cT=12;
+const cRight=49+1901, cBot=41+317;
+const bX=100, bY=100, bW=1800, bH=199;
+const BADGE_TOP=25, BADGE_H=39, TEXT_CY=49, BADGE_PAD=39;
+const fontSize=47, LOGO_H=95;
+const FONT=`900 ${fontSize}px 'Montserrat', sans-serif`;
+
+// --- GRILLE (style "grille") : 8 rangées, cellules de même taille que la version à 4 rangées ---
+// La grille a donc besoin d'un canevas plus haut que les autres styles (calculé, pas deviné).
+const GRILLE_ROWS=8, GRILLE_GAP=8;
+const GRILLE_CELL_H=(250-3*GRILLE_GAP)/4; // taille de cellule de la grille d'origine (4 rangées / 250px)
+const GRILLE_CONTENT_H=GRILLE_ROWS*GRILLE_CELL_H+(GRILLE_ROWS-1)*GRILLE_GAP;
+const GRILLE_CANVAS_H=130+GRILLE_CONTENT_H+20; // gridY=130 + contenu + même marge basse que l'original (20px)
+function styleCanvasH(id){ return id==='grille' ? GRILLE_CANVAS_H : H; }
+
+// --- UTILITAIRES DE DESSIN ---
+function paintBackground(ctx, h){
+  h = h || H;
+  if(bgTransparent) return;
+  if(imgBg){drawCover(ctx,imgBg,0,0,W,h);}
+  else{ctx.fillStyle=bgCol.value; ctx.fillRect(0,0,W,h);}
+}
+function drawCover(ctx,img,x,y,w,h){
+  const r=Math.max(w/img.width,h/img.height);
+  const dw=img.width*r, dh=img.height*r;
+  ctx.drawImage(img,x+(w-dw)/2,y+(h-dh)/2,dw,dh);
+}
+
+function roundRectPath(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+// Variante "sous-chemin" : n'appelle pas beginPath, pour pouvoir combiner
+// plusieurs rectangles arrondis dans un même path (ex: anneau via règle evenodd).
+function roundRectSub(ctx,x,y,w,h,r){
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
+// Rectangle à coins "pixel/8-bit" : au lieu d'un arc, chaque coin est une
+// mini-marche d'escalier (n paliers) qui approxime l'arrondi de façon blocky.
+function pixelStairSub(ctx,x,y,w,h,r,n){
+  n = n||4;
+  const s = r/n;
+  function corner(px,py,dax,day,dbx,dby){
+    let cx=px, cy=py;
+    for(let i=0;i<n;i++){
+      cx+=s*dax; cy+=s*day; ctx.lineTo(cx,cy);
+      cx+=s*dbx; cy+=s*dby; ctx.lineTo(cx,cy);
+    }
+  }
+  ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y);
+  corner(x+w-r,y, 1,0, 0,1);
+  ctx.lineTo(x+w,y+h-r);
+  corner(x+w,y+h-r, 0,1, -1,0);
+  ctx.lineTo(x+r,y+h);
+  corner(x+r,y+h, -1,0, 0,-1);
+  ctx.lineTo(x,y+r);
+  corner(x,y+r, 0,-1, 1,0);
+  ctx.closePath();
+}
+function pixelStairPath(ctx,x,y,w,h,r,n){
+  ctx.beginPath();
+  pixelStairSub(ctx,x,y,w,h,r,n);
+}
+
+function getFillStyle(ctx,x1,y1,x2,y2,c1,c2,grad,dir){
+  if(!grad) return c1;
+  const isV=dir==='v';
+  const gr=ctx.createLinearGradient(x1,y1,isV?x1:x2,isV?y2:y1);
+  gr.addColorStop(0,c1); gr.addColorStop(1,c2);
+  return gr;
+}
+
+// --- STYLES DE BARRES ---
+
+// 1. DEFAULT (original)
+function renderDefault(ctx,p){
+  const title=titleInp.value||'';
+  const pct=parseInt(pctSlider.value);
+  const fillW=Math.round(bW*pct/100);
+  ctx.font=FONT;
+  let badgeW=0, logoRW=0, logoRH=0;
+  if(imgLogo){logoRH=LOGO_H; logoRW=(imgLogo.width/imgLogo.height)*logoRH; badgeW=logoRW+BADGE_PAD*2;}
+  else if(title){badgeW=ctx.measureText(title).width+BADGE_PAD*2;}
+  const bCX=W/2, bL=bCX-badgeW/2, bR=bCX+badgeW/2;
+  const lbTop=imgLogo?TEXT_CY-logoRH/2:BADGE_TOP;
+  const lbH=imgLogo?logoRH:BADGE_H;
+
+  paintBackground(ctx);
+
+  if(pct>0){ctx.save(); ctx.beginPath(); ctx.rect(bX,bY,fillW,bH); ctx.clip();
+    if(imgFill){drawCover(ctx,imgFill,bX,bY,bW,bH);}
+    else{let fs; if(fillGrad){const isV=fillDir==='v'; const gr=ctx.createLinearGradient(bX,bY,isV?bX:bX+bW,isV?bY+bH:bY); gr.addColorStop(0,fC1.value); gr.addColorStop(1,fC2.value); fs=gr;}else{fs=fC1.value;} ctx.fillStyle=fs; ctx.fillRect(bX,bY,bW,bH);}
+    ctx.restore();}
+
+  if(pct<100){ctx.save(); ctx.beginPath(); ctx.rect(bX+fillW,bY,bW-fillW,bH); ctx.clip();
+    if(imgEmpty){drawCover(ctx,imgEmpty,bX,bY,bW,bH);}
+    else{ctx.fillStyle=emptyColor; ctx.fillRect(bX+fillW,bY,bW-fillW,bH);}
+    ctx.restore();}
+
+  if(imgBorder){ctx.save(); ctx.beginPath();
+    ctx.rect(L,T,cT,cBot-T); ctx.rect(cRight-cT,T,cT,cBot-T); ctx.rect(L+cT,cBot-cT,cRight-L-cT*2,cT);
+    ctx.rect(L+cT,T,Math.max(0,bL-(L+cT)),cT); ctx.rect(Math.min(bR,cRight-cT),T,Math.max(0,(cRight-cT)-Math.min(bR,cRight-cT)),cT);
+    ctx.clip(); drawCover(ctx,imgBorder,L,T,cRight-L,cBot-T); ctx.restore();}
+  else{
+    let bFill; if(borderGrad){const isV=borderDir==='v'; const gr=ctx.createLinearGradient(L,T,isV?L:cRight,isV?cBot:T); gr.addColorStop(0,bC1.value); gr.addColorStop(1,bC2.value); bFill=gr;}else{bFill=bC1.value;}
+    ctx.fillStyle=bFill;
+    ctx.fillRect(L,T,cT,cBot-T); ctx.fillRect(cRight-cT,T,cT,cBot-T); ctx.fillRect(L+cT,cBot-cT,cRight-L-cT*2,cT);
+    ctx.fillRect(L+cT,T,Math.max(0,bL-(L+cT)),cT); ctx.fillRect(bR,T,Math.max(0,(cRight-cT)-bR),cT);}
+
+  if(badgeW>0 && !bgTransparent){
+    if(imgBg){ctx.save(); ctx.beginPath(); ctx.rect(bL,lbTop,badgeW,lbH); ctx.clip(); drawCover(ctx,imgBg,0,0,W,H); ctx.restore();}
+    else{ctx.fillStyle=bgCol.value; ctx.fillRect(bL,lbTop,badgeW,lbH);}
+  }
+
+  if(imgLogo&&badgeW>0){ctx.drawImage(imgLogo,bCX-logoRW/2,TEXT_CY-logoRH/2,logoRW,logoRH);}
+  else if(title){ctx.font=FONT; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=txtColor.value; ctx.fillText(title,bCX,TEXT_CY);}
+}
+
+// 2. MINIMALISTE
+function renderMinimaliste(ctx,p){
+  const barX=100, barY=170, barW=1800, barH=110;
+  const pct=parseInt(pctSlider.value);
+  const fillW=Math.round(barW*pct/100);
+  paintBackground(ctx);
+  ctx.font='700 36px Inter, sans-serif';
+  ctx.textAlign='left'; ctx.textBaseline='middle';
+  // Logo ou titre
+  if(imgLogo){
+    const logoH=95, logoW=(imgLogo.width/imgLogo.height)*logoH;
+    ctx.drawImage(imgLogo, barX, 100-logoH/2, logoW, logoH);
+  } else {
+    ctx.fillStyle=txtColor.value;
+    ctx.fillText(titleInp.value||'', barX, 100);
+  }
+  if(pct>0){
+    ctx.save(); ctx.beginPath(); ctx.rect(barX,barY,fillW,barH); ctx.clip();
+    if(imgFill){drawCover(ctx,imgFill,barX,barY,barW,barH);}
+    else{ctx.fillStyle=getFillStyle(ctx,barX,barY,barX+barW,barY+barH,fC1.value,fC2.value,fillGrad,fillDir); ctx.fillRect(barX,barY,barW,barH);}
+    ctx.restore();
+  }
+  if(pct<100){
+    ctx.save(); ctx.beginPath(); ctx.rect(barX+fillW,barY,barW-fillW,barH); ctx.clip();
+    if(imgEmpty){drawCover(ctx,imgEmpty,barX,barY,barW,barH);}
+    else{ctx.fillStyle=emptyColor; ctx.fillRect(barX+fillW,barY,barW-fillW,barH);}
+    ctx.restore();
+  }
+}
+
+// 3. ARRONDIE (pilule détachée, contour fin et ESPACÉ autour — version DeepSeek, gap élargi)
+function renderArrondie(ctx,p){
+  const pX=110, pY=160, pW=1780, pH=110, pR=55;
+  const gap=26; // espace entre la barre et le contour (élargi par rapport à la version DeepSeek d'origine)
+  const pct=parseInt(pctSlider.value), fillW=Math.round(pW*pct/100);
+
+  paintBackground(ctx);
+
+  // Texte centré au-dessus
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  const titleY = 95;
+  if(imgLogo){
+    const logoH=95, logoW=(imgLogo.width/imgLogo.height)*logoH;
+    const logoMaxBottom = pY-gap-14; // marge claire avant le contour détaché
+    const logoCY = Math.min(titleY, logoMaxBottom-logoH/2);
+    ctx.drawImage(imgLogo, W/2-logoW/2, logoCY-logoH/2, logoW, logoH);
+  } else {
+    ctx.font='700 32px Inter, sans-serif';
+    ctx.fillStyle=txtColor.value;
+    ctx.fillText(titleInp.value||'', W/2, titleY);
+  }
+
+  // Barre (forme pilule, centrée)
+  ctx.save(); roundRectPath(ctx,pX,pY,pW,pH,pR); ctx.clip();
+  if(pct>0){ctx.save(); ctx.beginPath(); ctx.rect(pX,pY,fillW,pH); ctx.clip();
+    if(imgFill){drawCover(ctx,imgFill,pX,pY,pW,pH);}
+    else{ctx.fillStyle=getFillStyle(ctx,pX,pY,pX+pW,pY+pH,fC1.value,fC2.value,fillGrad,fillDir); ctx.fillRect(pX,pY,pW,pH);}
+    ctx.restore();}
+  if(pct<100){ctx.save(); ctx.beginPath(); ctx.rect(pX+fillW,pY,pW-fillW,pH); ctx.clip();
+    if(imgEmpty){drawCover(ctx,imgEmpty,pX,pY,pW,pH);}
+    else{ctx.fillStyle=emptyColor; ctx.fillRect(pX+fillW,pY,pW-fillW,pH);}
+    ctx.restore();}
+  ctx.restore();
+
+  // Contour fin détaché, avec un espace élargi tout autour de la barre
+  ctx.save();
+  roundRectPath(ctx, pX-gap, pY-gap, pW+gap*2, pH+gap*2, pR+gap);
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = getFillStyle(ctx,pX,pY,pX+pW,pY+pH,bC1.value,bC2.value,borderGrad,borderDir);
+  ctx.stroke();
+  ctx.restore();
+}
+
+// 5. LIGNE FINE
+function renderLigneFine(ctx,p){
+  const lX=100, lY=192, lW=1800, lH=16, lR=8;
+  const pct=parseInt(pctSlider.value);
+  const fillW=Math.round(lW*pct/100);
+  paintBackground(ctx);
+  ctx.font='600 30px Inter, sans-serif';
+  ctx.textAlign='left'; ctx.textBaseline='middle';
+  if(imgLogo){const logoH=95, logoW=(imgLogo.width/imgLogo.height)*logoH; ctx.drawImage(imgLogo, lX, 140-logoH/2, logoW, logoH);}
+  else{ctx.fillStyle=txtColor.value; ctx.fillText(pctLabel(titleInp.value, pct), lX, 140);}
+  ctx.save();
+  roundRectPath(ctx,lX,lY,lW,lH,lR); ctx.clip();
+  if(pct>0){
+    ctx.save(); ctx.beginPath(); ctx.rect(lX,lY,fillW,lH); ctx.clip();
+    if(imgFill){drawCover(ctx,imgFill,lX,lY,lW,lH);}
+    else{ctx.fillStyle=getFillStyle(ctx,lX,lY,lX+lW,lY+lH,fC1.value,fC2.value,fillGrad,fillDir); ctx.fillRect(lX,lY,lW,lH);}
+    ctx.restore();
+  }
+  if(pct<100){
+    ctx.save(); ctx.beginPath(); ctx.rect(lX+fillW,lY,lW-fillW,lH); ctx.clip();
+    if(imgEmpty){drawCover(ctx,imgEmpty,lX,lY,lW,lH);}
+    else{ctx.fillStyle=emptyColor; ctx.fillRect(lX+fillW,lY,lW-fillW,lH);}
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+// 6. CŒURS (pixel art, 10 cœurs, progression horizontale)
+const HEART_BITMAP = [
+  "0110110",
+  "1111111",
+  "1111111",
+  "1111111",
+  "0111110",
+  "0011100",
+  "0001000"
+];
+function renderCoeurs(ctx,p){
+  paintBackground(ctx);
+  ctx.font='700 34px Inter, sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  if(imgLogo){const logoH=95, logoW=(imgLogo.width/imgLogo.height)*logoH; ctx.drawImage(imgLogo, W/2-logoW/2, 75-logoH/2, logoW, logoH);}
+  else{ctx.fillStyle=txtColor.value; ctx.fillText(pctLabel(titleInp.value, pctSlider.value), W/2, 75);}
+
+  const n=10, px=16, gap=20;
+  const heartW = HEART_BITMAP[0].length * px;
+  const totalW = n * heartW + (n-1) * gap;
+  const startX = (W - totalW) / 2;
+  const startY = 150;
+  const heartH = HEART_BITMAP.length * px;
+  const pct=parseInt(pctSlider.value);
+  const fillBoundaryX = startX + totalW * pct / 100;
+  const fillStyle = getFillStyle(ctx,startX,startY,startX+totalW,startY+heartH,fC1.value,fC2.value,fillGrad,fillDir);
+
+  // Chaque pixel-bloc du bitmap est traité individuellement : plein, vide, ou coupé
+  // proportionnellement s'il chevauche la frontière — comme les autres barres (Points/Chevrons),
+  // pour un remplissage vraiment progressif (pas de saut de bloc entier par palier de %).
+  for(let h=0;h<n;h++){
+    const heartX=startX+h*(heartW+gap);
+    for(let r=0;r<HEART_BITMAP.length;r++){
+      for(let c=0;c<HEART_BITMAP[r].length;c++){
+        if(HEART_BITMAP[r][c]!=='1') continue;
+        const pxX=heartX+c*px, pxY=startY+r*px, bw=px-1;
+        const pxR=pxX+bw;
+        if(pxR<=fillBoundaryX){
+          if(imgFill){ctx.save();ctx.beginPath();ctx.rect(pxX,pxY,bw,bw);ctx.clip();drawCover(ctx,imgFill,startX,startY,totalW,heartH);ctx.restore();}
+          else{ctx.fillStyle=fillStyle; ctx.fillRect(pxX,pxY,bw,bw);}
+        } else if(pxX>=fillBoundaryX){
+          if(imgEmpty){ctx.save();ctx.beginPath();ctx.rect(pxX,pxY,bw,bw);ctx.clip();drawCover(ctx,imgEmpty,startX,startY,totalW,heartH);ctx.restore();}
+          else{ctx.fillStyle=emptyColor; ctx.fillRect(pxX,pxY,bw,bw);}
+        } else {
+          const cutW=fillBoundaryX-pxX;
+          if(cutW>0){
+            if(imgFill){ctx.save();ctx.beginPath();ctx.rect(pxX,pxY,cutW,bw);ctx.clip();drawCover(ctx,imgFill,startX,startY,totalW,heartH);ctx.restore();}
+            else{ctx.fillStyle=fillStyle; ctx.fillRect(pxX,pxY,cutW,bw);}
+          }
+          if(cutW<bw){
+            if(imgEmpty){ctx.save();ctx.beginPath();ctx.rect(pxX+cutW,pxY,bw-cutW,bw);ctx.clip();drawCover(ctx,imgEmpty,startX,startY,totalW,heartH);ctx.restore();}
+            else{ctx.fillStyle=emptyColor; ctx.fillRect(pxX+cutW,pxY,bw-cutW,bw);}
+          }
+        }
+      }
+    }
+  }
+}
+
+// 7. CŒURS VIDE (même structure que Cœurs mais en contour uniquement)
+// Bitmap de contour calculé pixel par pixel (1 = bordure du cœur plein, 0 = intérieur ou vide)
+const HEART_OUTLINE_BITMAP = [
+  "0110110",
+  "1001001",
+  "1000001",
+  "1000001",
+  "0100010",
+  "0010100",
+  "0001000"
+];
+function renderCoeursvide(ctx,p){
+  paintBackground(ctx);
+  ctx.font='700 34px Inter, sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  if(imgLogo){const logoH=95, logoW=(imgLogo.width/imgLogo.height)*logoH; ctx.drawImage(imgLogo, W/2-logoW/2, 75-logoH/2, logoW, logoH);}
+  else{ctx.fillStyle=txtColor.value; ctx.fillText(pctLabel(titleInp.value, pctSlider.value), W/2, 75);}
+
+  const n=10, px=16, gap=20;
+  const heartW = HEART_OUTLINE_BITMAP[0].length * px;
+  const totalW = n * heartW + (n-1) * gap;
+  const heartH = HEART_OUTLINE_BITMAP.length * px;
+  const startX = (W - totalW) / 2;
+  const startY = 150;
+  const pct=parseInt(pctSlider.value);
+  const fillBoundaryX = startX + totalW * pct / 100;
+  const fillStyle = getFillStyle(ctx,startX,startY,startX+totalW,startY+heartH,fC1.value,fC2.value,fillGrad,fillDir);
+
+  // Même correction que Cœurs : coupe proportionnelle du bloc-pixel à la frontière,
+  // pour un remplissage progressif au lieu d'un saut de bloc entier par palier de %.
+  for(let h=0;h<n;h++){
+    const heartX=startX+h*(heartW+gap);
+    for(let r=0;r<HEART_OUTLINE_BITMAP.length;r++){
+      for(let c=0;c<HEART_OUTLINE_BITMAP[r].length;c++){
+        if(HEART_OUTLINE_BITMAP[r][c]!=='1') continue;
+        const pxX=heartX+c*px, pxY=startY+r*px, bw=px-1;
+        const pxR=pxX+bw;
+        if(pxR<=fillBoundaryX){
+          if(imgFill){ctx.save();ctx.beginPath();ctx.rect(pxX,pxY,bw,bw);ctx.clip();drawCover(ctx,imgFill,startX,startY,totalW,heartH);ctx.restore();}
+          else{ctx.fillStyle=fillStyle; ctx.fillRect(pxX,pxY,bw,bw);}
+        } else if(pxX>=fillBoundaryX){
+          if(imgEmpty){ctx.save();ctx.beginPath();ctx.rect(pxX,pxY,bw,bw);ctx.clip();drawCover(ctx,imgEmpty,startX,startY,totalW,heartH);ctx.restore();}
+          else{ctx.fillStyle=emptyColor; ctx.fillRect(pxX,pxY,bw,bw);}
+        } else {
+          const cutW=fillBoundaryX-pxX;
+          if(cutW>0){
+            if(imgFill){ctx.save();ctx.beginPath();ctx.rect(pxX,pxY,cutW,bw);ctx.clip();drawCover(ctx,imgFill,startX,startY,totalW,heartH);ctx.restore();}
+            else{ctx.fillStyle=fillStyle; ctx.fillRect(pxX,pxY,cutW,bw);}
+          }
+          if(cutW<bw){
+            if(imgEmpty){ctx.save();ctx.beginPath();ctx.rect(pxX+cutW,pxY,bw-cutW,bw);ctx.clip();drawCover(ctx,imgEmpty,startX,startY,totalW,heartH);ctx.restore();}
+            else{ctx.fillStyle=emptyColor; ctx.fillRect(pxX+cutW,pxY,bw-cutW,bw);}
+          }
+        }
+      }
+    }
+  }
+}
+
+// 8. DOUBLE LIGNE (deux lignes de taille égale, remplissage séquentiel : ligne 1 = 0→50%, ligne 2 = 50→100%)
+function renderDoubleLigne(ctx,p){
+  const lX=100, lW=1800;
+  const l1Y=178, l1H=14, l1R=7;
+  const l2Y=210, l2H=14, l2R=7;
+  const pct=parseInt(pctSlider.value);
+  // Ligne 1 couvre 0-50%, ligne 2 couvre 50-100% : chacune remise à l'échelle 0-100 sur sa moitié
+  const pct1=Math.min(100, pct*2);
+  const pct2=Math.max(0, Math.min(100, (pct-50)*2));
+  const fillW1=Math.round(lW*pct1/100);
+  const fillW2=Math.round(lW*pct2/100);
+  paintBackground(ctx);
+  ctx.font='600 30px Inter, sans-serif';
+  ctx.textAlign='left'; ctx.textBaseline='middle';
+  if(imgLogo){const logoH=95, logoW=(imgLogo.width/imgLogo.height)*logoH; ctx.drawImage(imgLogo, lX, 125-logoH/2, logoW, logoH);}
+  else{ctx.fillStyle=txtColor.value; ctx.fillText(pctLabel(titleInp.value, pct), lX, 125);}
+
+  function drawLine(y,h,r,fillW){
+    ctx.save();
+    roundRectPath(ctx,lX,y,lW,h,r); ctx.clip();
+    if(fillW>0){
+      ctx.save(); ctx.beginPath(); ctx.rect(lX,y,fillW,h); ctx.clip();
+      if(imgFill){drawCover(ctx,imgFill,lX,y,lW,h);}
+      else{ctx.fillStyle=getFillStyle(ctx,lX,y,lX+lW,y+h,fC1.value,fC2.value,fillGrad,fillDir); ctx.fillRect(lX,y,lW,h);}
+      ctx.restore();
+    }
+    if(fillW<lW){
+      ctx.save(); ctx.beginPath(); ctx.rect(lX+fillW,y,lW-fillW,h); ctx.clip();
+      if(imgEmpty){drawCover(ctx,imgEmpty,lX,y,lW,h);}
+      else{ctx.fillStyle=emptyColor; ctx.fillRect(lX+fillW,y,lW-fillW,h);}
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  drawLine(l1Y,l1H,l1R,fillW1);
+  drawLine(l2Y,l2H,l2R,fillW2);
+}
+
+// 10. POINTS (20 cercles, remplissage progressif — le point à la frontière est coupé, pas basculé d'un coup)
+function renderPoints(ctx,p){
+  const n=20,D=78,gap=12;
+  const totalW=n*D+(n-1)*gap;
+  const startX=(W-totalW)/2,centerY=230,r=D/2;
+  const pct=parseInt(pctSlider.value);
+  const fBX=startX+totalW*pct/100;
+  paintBackground(ctx);
+  ctx.font='700 36px Inter,sans-serif';ctx.textBaseline='middle';ctx.textAlign='center';
+  if(imgLogo){const lH=95,lW=imgLogo.width/imgLogo.height*lH;ctx.drawImage(imgLogo,W/2-lW/2,75-lH/2,lW,lH);}
+  else{ctx.fillStyle=txtColor.value;ctx.fillText(pctLabel(titleInp.value, pct),W/2,75);}
+  for(let i=0;i<n;i++){
+    const cx=startX+i*(D+gap)+r;
+    const dotL=cx-r, dotR=cx+r;
+    ctx.save();
+    ctx.beginPath();ctx.arc(cx,centerY,r,0,Math.PI*2);ctx.clip();
+    if(dotR<=fBX){
+      // point entièrement dans la zone remplie
+      if(imgFill){drawCover(ctx,imgFill,startX,centerY-r,totalW,D);}
+      else{ctx.fillStyle=getFillStyle(ctx,startX,centerY-r,startX+totalW,centerY+r,fC1.value,fC2.value,fillGrad,fillDir);ctx.fillRect(dotL,centerY-r,D,D);}
+    } else if(dotL>=fBX){
+      // point entièrement dans la zone vide
+      if(imgEmpty){drawCover(ctx,imgEmpty,startX,centerY-r,totalW,D);}
+      else{ctx.fillStyle=emptyColor;ctx.fillRect(dotL,centerY-r,D,D);}
+    } else {
+      // point à cheval sur la frontière : coupé en deux, comme les autres barres.
+      // Important : un seul clip (le cercle) reste actif ici — on ne rajoute PAS de second
+      // clip rectangulaire par-dessus, sinon les clips imbriqués cassent l'anti-aliasing
+      // du bord courbe et le cercle apparaît pixelisé/crénelé.
+      if(imgFill){
+        ctx.save();ctx.beginPath();ctx.rect(dotL,centerY-r,fBX-dotL,D);ctx.clip();
+        drawCover(ctx,imgFill,startX,centerY-r,totalW,D);
+        ctx.restore();
+      } else {
+        ctx.fillStyle=getFillStyle(ctx,startX,centerY-r,startX+totalW,centerY+r,fC1.value,fC2.value,fillGrad,fillDir);
+        ctx.fillRect(dotL,centerY-r,fBX-dotL,D);
+      }
+      if(imgEmpty){
+        ctx.save();ctx.beginPath();ctx.rect(fBX,centerY-r,dotR-fBX,D);ctx.clip();
+        drawCover(ctx,imgEmpty,startX,centerY-r,totalW,D);
+        ctx.restore();
+      } else {
+        ctx.fillStyle=emptyColor;
+        ctx.fillRect(fBX,centerY-r,dotR-fBX,D);
+      }
+    }
+    ctx.restore();
+  }
+}
+
+// Utilitaire : rayures diagonales statiques (bandes plus sombres à 45° sur la couleur de fond)
+function drawDiagonalStripes(ctx,x,y,w,h,color,stripeW){
+  if(w<=0||h<=0) return;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x,y,w,h); ctx.clip();
+  ctx.fillStyle=color; ctx.fillRect(x,y,w,h);
+  ctx.save();
+  ctx.globalAlpha=0.18; ctx.fillStyle='#000000';
+  ctx.translate(x,y);
+  ctx.rotate(-Math.PI/4);
+  const span=(w+h)*1.5;
+  for(let sx=-h; sx<w+h; sx+=stripeW*2){
+    ctx.fillRect(sx,-h,stripeW,span);
+  }
+  ctx.restore();
+  ctx.restore();
+}
+
+// 11. RAYURES DIAGONALES (statique) — même geste que Arrondie : titre au-dessus,
+// cadre complet fermé (pas de découpe de pastille), dégradé fonctionnel sur le fill rayé.
+function renderRayures(ctx,p){
+  const pX=110, pY=160, pW=1780, pH=110, bT=6, gap=26;
+  const pct=parseInt(pctSlider.value), fillW=Math.round(pW*pct/100);
+
+  paintBackground(ctx);
+
+  // Texte centré au-dessus (comme Arrondie)
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  const titleY = 95;
+  if(imgLogo){
+    const logoH=95, logoW=(imgLogo.width/imgLogo.height)*logoH;
+    const logoMaxBottom = pY-gap-14; // marge claire avant le contour détaché
+    const logoCY = Math.min(titleY, logoMaxBottom-logoH/2);
+    ctx.drawImage(imgLogo, W/2-logoW/2, logoCY-logoH/2, logoW, logoH);
+  } else {
+    ctx.font='700 32px Inter, sans-serif';
+    ctx.fillStyle=txtColor.value;
+    ctx.fillText(titleInp.value||'', W/2, titleY);
+  }
+
+  // Zone remplie : rayures diagonales avec dégradé fonctionnel (ou image si fournie)
+  ctx.save(); ctx.beginPath(); ctx.rect(pX,pY,pW,pH); ctx.clip();
+  if(pct>0){
+    if(imgFill){
+      ctx.save(); ctx.beginPath(); ctx.rect(pX,pY,fillW,pH); ctx.clip();
+      drawCover(ctx,imgFill,pX,pY,pW,pH);
+      ctx.restore();
+    } else {
+      const stripeFill = getFillStyle(ctx,pX,pY,pX+pW,pY+pH,fC1.value,fC2.value,fillGrad,fillDir);
+      drawDiagonalStripes(ctx,pX,pY,fillW,pH,stripeFill,34);
+    }
+  }
+  // Zone vide : couleur pleine, comme les autres barres
+  if(pct<100){
+    ctx.save(); ctx.beginPath(); ctx.rect(pX+fillW,pY,pW-fillW,pH); ctx.clip();
+    if(imgEmpty){drawCover(ctx,imgEmpty,pX,pY,pW,pH);}
+    else{ctx.fillStyle=emptyColor; ctx.fillRect(pX+fillW,pY,pW-fillW,pH);}
+    ctx.restore();
+  }
+  ctx.restore();
+
+  // Cadre fermé : rectangle complet, espacé de la barre (même gap que Arrondie)
+  ctx.save();
+  if(imgBorder){
+    ctx.beginPath();
+    ctx.rect(pX-gap-bT/2, pY-gap-bT/2, pW+gap*2+bT, pH+gap*2+bT);
+    ctx.rect(pX-gap+bT/2, pY-gap+bT/2, pW+gap*2-bT, pH+gap*2-bT);
+    ctx.clip('evenodd');
+    drawCover(ctx,imgBorder,pX-gap-bT,pY-gap-bT,pW+gap*2+bT*2,pH+gap*2+bT*2);
+  } else {
+    ctx.beginPath(); ctx.rect(pX-gap, pY-gap, pW+gap*2, pH+gap*2);
+    ctx.lineWidth = bT;
+    ctx.strokeStyle = getFillStyle(ctx,pX,pY,pX+pW,pY+pH,bC1.value,bC2.value,borderGrad,borderDir);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// 10. ESCALIER (10 marches de hauteur croissante)
+function renderEscalier(ctx,p){
+  const n=10,stepW=152,gap=18,maxH=280,bottom=388;
+  const totalW=n*stepW+(n-1)*gap;
+  const startX=(W-totalW)/2;
+  const pct=parseInt(pctSlider.value);
+  const fBX=startX+totalW*pct/100;
+  paintBackground(ctx);
+  ctx.font='700 36px Inter,sans-serif';ctx.textBaseline='middle';ctx.textAlign='left';
+  if(imgLogo){const lH=95,lW=imgLogo.width/imgLogo.height*lH;ctx.drawImage(imgLogo,startX,52-lH/2,lW,lH);}
+  else{ctx.fillStyle=txtColor.value;ctx.fillText(titleInp.value||'',startX,52);}
+  for(let i=0;i<n;i++){
+    const sx=startX+i*(stepW+gap),sr=sx+stepW;
+    const sh=(i+1)/n*maxH,sy=bottom-sh;
+    ctx.save();roundRectPath(ctx,sx,sy,stepW,sh,8);ctx.clip();
+    if(sr<=fBX){
+      if(imgFill){drawCover(ctx,imgFill,startX,bottom-maxH,totalW,maxH);}
+      else{ctx.fillStyle=getFillStyle(ctx,startX,bottom-maxH,startX+totalW,bottom,fC1.value,fC2.value,fillGrad,fillDir);ctx.fillRect(startX,bottom-maxH,totalW,maxH);}
+    } else if(sx>=fBX){
+      if(imgEmpty){drawCover(ctx,imgEmpty,startX,bottom-maxH,totalW,maxH);}
+      else{ctx.fillStyle=emptyColor;ctx.fillRect(startX,bottom-maxH,totalW,maxH);}
+    } else {
+      if(imgEmpty){drawCover(ctx,imgEmpty,startX,bottom-maxH,totalW,maxH);}else{ctx.fillStyle=emptyColor;ctx.fillRect(startX,bottom-maxH,totalW,maxH);}
+      ctx.save();ctx.beginPath();ctx.rect(sx,sy,fBX-sx,sh);ctx.clip();
+      if(imgFill){drawCover(ctx,imgFill,startX,bottom-maxH,totalW,maxH);}
+      else{ctx.fillStyle=getFillStyle(ctx,startX,bottom-maxH,startX+totalW,bottom,fC1.value,fC2.value,fillGrad,fillDir);ctx.fillRect(startX,bottom-maxH,totalW,maxH);}
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+}
+
+// 12. JEU VIDÉO 8-BIT (copie de Arrondie : contour détaché + espacé, mais extrémités
+// en marches d'escalier "pixel" au lieu d'un arc lisse)
+function renderJV8bit(ctx,p){
+  const pX=110, pY=160, pW=1780, pH=110, pR=55, steps=4;
+  const gap=26; // espace entre la barre et le contour, comme Arrondie
+  const pct=parseInt(pctSlider.value), fillW=Math.round(pW*pct/100);
+
+  paintBackground(ctx);
+
+  // Texte centré au-dessus
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  const titleY = 95;
+  if(imgLogo){
+    const logoH=95, logoW=(imgLogo.width/imgLogo.height)*logoH;
+    const logoMaxBottom = pY-gap-14; // marge claire avant le contour détaché
+    const logoCY = Math.min(titleY, logoMaxBottom-logoH/2);
+    ctx.drawImage(imgLogo, W/2-logoW/2, logoCY-logoH/2, logoW, logoH);
+  } else {
+    ctx.font='700 32px Inter, sans-serif';
+    ctx.fillStyle=txtColor.value;
+    ctx.fillText(titleInp.value||'', W/2, titleY);
+  }
+
+  // Barre (forme "pixel-pilule", coins en marches d'escalier, centrée)
+  ctx.save(); pixelStairPath(ctx,pX,pY,pW,pH,pR,steps); ctx.clip();
+  if(pct>0){ctx.save(); ctx.beginPath(); ctx.rect(pX,pY,fillW,pH); ctx.clip();
+    if(imgFill){drawCover(ctx,imgFill,pX,pY,pW,pH);}
+    else{ctx.fillStyle=getFillStyle(ctx,pX,pY,pX+pW,pY+pH,fC1.value,fC2.value,fillGrad,fillDir); ctx.fillRect(pX,pY,pW,pH);}
+    ctx.restore();}
+  if(pct<100){ctx.save(); ctx.beginPath(); ctx.rect(pX+fillW,pY,pW-fillW,pH); ctx.clip();
+    if(imgEmpty){drawCover(ctx,imgEmpty,pX,pY,pW,pH);}
+    else{ctx.fillStyle=emptyColor; ctx.fillRect(pX+fillW,pY,pW-fillW,pH);}
+    ctx.restore();}
+  ctx.restore();
+
+  // Contour "pixel" détaché, avec le même espace élargi tout autour que Arrondie
+  ctx.save();
+  const bT=6, oR=pR+gap;
+  if(imgBorder){
+    ctx.beginPath();
+    pixelStairSub(ctx, pX-gap-bT/2, pY-gap-bT/2, pW+gap*2+bT, pH+gap*2+bT, oR+bT/2, steps);
+    pixelStairSub(ctx, pX-gap+bT/2, pY-gap+bT/2, pW+gap*2-bT, pH+gap*2-bT, oR-bT/2, steps);
+    ctx.clip('evenodd');
+    drawCover(ctx,imgBorder,pX-gap-bT,pY-gap-bT,pW+gap*2+bT*2,pH+gap*2+bT*2);
+  } else {
+    pixelStairPath(ctx, pX-gap, pY-gap, pW+gap*2, pH+gap*2, oR, steps);
+    ctx.lineWidth = bT;
+    ctx.strokeStyle = getFillStyle(ctx,pX,pY,pX+pW,pY+pH,bC1.value,bC2.value,borderGrad,borderDir);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// Chemin d'un segment incliné (parallélogramme) pour le style "Jeu vidéo chargement"
+function slantSegPath(ctx,sx,sy,w,h,skew){
+  ctx.beginPath();
+  ctx.moveTo(sx+skew, sy);
+  ctx.lineTo(sx+w+skew, sy);
+  ctx.lineTo(sx+w, sy+h);
+  ctx.lineTo(sx, sy+h);
+  ctx.closePath();
+}
+
+// 13. JEU VIDÉO CHARGEMENT (segments inclinés type "loading bar" rétro, rayures diagonales plus épaisses sur le rempli,
+// titre au-dessus et cadre fermé espacé de la barre, comme Arrondie/Rayures)
+function renderJVChargement(ctx,p){
+  const pX=110, pY=160, pW=1780, pH=110, bT=6, gap=26;
+  const n=16, segGap=10, skew=16;
+  const segW=(pW-(n-1)*segGap)/n;
+  const pct=parseInt(pctSlider.value);
+  const fBX=pX+pW*pct/100;
+
+  paintBackground(ctx);
+
+  // Texte centré au-dessus (comme Arrondie/Rayures)
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  const titleY = 95;
+  if(imgLogo){
+    const logoH=95, logoW=(imgLogo.width/imgLogo.height)*logoH;
+    const logoMaxBottom = pY-gap-14; // marge claire avant le contour détaché
+    const logoCY = Math.min(titleY, logoMaxBottom-logoH/2);
+    ctx.drawImage(imgLogo, W/2-logoW/2, logoCY-logoH/2, logoW, logoH);
+  } else {
+    ctx.font='700 32px Inter, sans-serif';
+    ctx.fillStyle=txtColor.value;
+    ctx.fillText(titleInp.value||'', W/2, titleY);
+  }
+
+  for(let i=0;i<n;i++){
+    const sx=pX+i*(segW+segGap), sr=sx+segW;
+    ctx.save(); slantSegPath(ctx,sx,pY,segW,pH,skew); ctx.clip();
+    // marge horizontale pour couvrir tout le parallélogramme incliné malgré le clip rectangulaire des sous-remplissages
+    const mx=sx-skew, mw=segW+skew*2;
+    if(sr<=fBX){
+      // segment entièrement rempli
+      if(imgFill){drawCover(ctx,imgFill,pX,pY,pW,pH);}
+      else{ ctx.fillStyle=getFillStyle(ctx,pX,pY,pX+pW,pY+pH,fC1.value,fC2.value,fillGrad,fillDir); ctx.fillRect(mx,pY,mw,pH); }
+    } else if(sx>=fBX){
+      // segment entièrement vide
+      if(imgEmpty){drawCover(ctx,imgEmpty,pX,pY,pW,pH);}
+      else{ ctx.fillStyle=emptyColor; ctx.fillRect(mx,pY,mw,pH); }
+    } else {
+      // segment à cheval sur la frontière : coupé progressivement, comme Points/Blocs
+      if(fBX>sx){
+        ctx.save(); ctx.beginPath(); ctx.rect(mx,pY,(fBX-mx),pH); ctx.clip();
+        if(imgFill){drawCover(ctx,imgFill,pX,pY,pW,pH);}
+        else{ ctx.fillStyle=getFillStyle(ctx,pX,pY,pX+pW,pY+pH,fC1.value,fC2.value,fillGrad,fillDir); ctx.fillRect(mx,pY,fBX-mx,pH); }
+        ctx.restore();
+      }
+      if(fBX<sr){
+        ctx.save(); ctx.beginPath(); ctx.rect(fBX,pY,(mx+mw)-fBX,pH); ctx.clip();
+        if(imgEmpty){drawCover(ctx,imgEmpty,pX,pY,pW,pH);}
+        else{ ctx.fillStyle=emptyColor; ctx.fillRect(fBX,pY,(mx+mw)-fBX,pH); }
+        ctx.restore();
+      }
+    }
+    ctx.restore();
+  }
+
+  // Cadre fermé : rectangle complet, espacé de la barre (même gap que Arrondie/Rayures)
+  ctx.save();
+  if(imgBorder){
+    ctx.beginPath();
+    ctx.rect(pX-gap-bT/2, pY-gap-bT/2, pW+gap*2+bT, pH+gap*2+bT);
+    ctx.rect(pX-gap+bT/2, pY-gap+bT/2, pW+gap*2-bT, pH+gap*2-bT);
+    ctx.clip('evenodd');
+    drawCover(ctx,imgBorder,pX-gap-bT,pY-gap-bT,pW+gap*2+bT*2,pH+gap*2+bT*2);
+  } else {
+    ctx.beginPath(); ctx.rect(pX-gap, pY-gap, pW+gap*2, pH+gap*2);
+    ctx.lineWidth = bT;
+    ctx.strokeStyle = getFillStyle(ctx,pX,pY,pX+pW,pY+pH,bC1.value,bC2.value,borderGrad,borderDir);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// 12. GRILLE (8 rangées × 20 colonnes, fill gauche→droite haut→bas)
+// Les cellules gardent EXACTEMENT la même taille que la grille d'origine (4 rangées) :
+// on ajoute vraiment 4 rangées en plus, la grille (et donc le canevas) devient plus haute.
+function renderGrille(ctx,p){
+  const cols=20,rows=GRILLE_ROWS,gap=8,gridX=100,gridY=130,gridW=1800;
+  const cellW=(gridW-(cols-1)*gap)/cols;
+  const cellH=GRILLE_CELL_H; // taille fixe, identique à la grille d'origine
+  const gridH=GRILLE_CONTENT_H;
+  const total=cols*rows;
+  const pct=parseInt(pctSlider.value);
+  const fBIdx=total*pct/100; // position de coupure continue (index fractionnaire), pour un remplissage progressif
+  paintBackground(ctx, GRILLE_CANVAS_H);
+  ctx.font='600 30px Inter,sans-serif';ctx.textBaseline='middle';ctx.textAlign='left';
+  if(imgLogo){const lH=95,lW=imgLogo.width/imgLogo.height*lH;ctx.drawImage(imgLogo,gridX,50-lH/2,lW,lH);}
+  else{ctx.fillStyle=txtColor.value;ctx.fillText(pctLabel(titleInp.value, pct),gridX,50);}
+  let idx=0;
+  for(let row=0;row<rows;row++){
+    for(let col=0;col<cols;col++){
+      const cx=gridX+col*(cellW+gap),cy=gridY+row*(cellH+gap);
+      ctx.save();roundRectPath(ctx,cx,cy,cellW,cellH,6);ctx.clip();
+      if(idx+1<=fBIdx){
+        // cellule entièrement dans la zone remplie
+        if(imgFill){drawCover(ctx,imgFill,gridX,gridY,gridW,gridH);}
+        else{ctx.fillStyle=getFillStyle(ctx,gridX,gridY,gridX+gridW,gridY+gridH,fC1.value,fC2.value,fillGrad,fillDir);ctx.fillRect(cx,cy,cellW,cellH);}
+      } else if(idx>=fBIdx){
+        // cellule entièrement dans la zone vide
+        if(imgEmpty){drawCover(ctx,imgEmpty,gridX,gridY,gridW,gridH);}
+        else{ctx.fillStyle=emptyColor;ctx.fillRect(cx,cy,cellW,cellH);}
+      } else {
+        // cellule à cheval sur la frontière : coupée progressivement, comme les autres barres
+        const frac=fBIdx-idx, cutW=cellW*frac;
+        if(cutW>0){
+          if(imgFill){ctx.save();ctx.beginPath();ctx.rect(cx,cy,cutW,cellH);ctx.clip();drawCover(ctx,imgFill,gridX,gridY,gridW,gridH);ctx.restore();}
+          else{ctx.fillStyle=getFillStyle(ctx,gridX,gridY,gridX+gridW,gridY+gridH,fC1.value,fC2.value,fillGrad,fillDir);ctx.fillRect(cx,cy,cutW,cellH);}
+        }
+        if(cutW<cellW){
+          if(imgEmpty){ctx.save();ctx.beginPath();ctx.rect(cx+cutW,cy,cellW-cutW,cellH);ctx.clip();drawCover(ctx,imgEmpty,gridX,gridY,gridW,gridH);ctx.restore();}
+          else{ctx.fillStyle=emptyColor;ctx.fillRect(cx+cutW,cy,cellW-cutW,cellH);}
+        }
+      }
+
+      ctx.restore();idx++;
+    }
+  }
+}
+
+// 13. ÉTOILES (10 étoiles vectorielles 5 branches)
+// 15. ICÔNES ÉTOILES (10 étoiles, remplissage progressif — l'étoile à la frontière est coupée, pas basculée d'un coup)
+function renderEtoiles(ctx,p){
+  const n=10,r=72,innerR=28,barX=100,barW=1800;
+  const spacing=(barW-2*r)/(n-1);
+  const starCY=255,pct=parseInt(pctSlider.value),fBX=barX+barW*pct/100;
+  paintBackground(ctx);
+  ctx.font='700 34px Inter,sans-serif';ctx.textBaseline='middle';ctx.textAlign='center';
+  if(imgLogo){const lH=95,lW=imgLogo.width/imgLogo.height*lH;ctx.drawImage(imgLogo,W/2-lW/2,80-lH/2,lW,lH);}
+  else{ctx.fillStyle=txtColor.value;ctx.fillText(pctLabel(titleInp.value, pct),W/2,80);}
+  function addStar(cx,cy){
+    for(let i=0;i<10;i++){
+      const a=(i*Math.PI/5)-Math.PI/2,rad=i%2===0?r:innerR;
+      const x=cx+rad*Math.cos(a),y=cy+rad*Math.sin(a);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+  }
+  for(let i=0;i<n;i++){
+    const cx=barX+r+i*spacing;
+    const starL=cx-r, starR=cx+r;
+    ctx.save();ctx.beginPath();addStar(cx,starCY);ctx.clip();
+    if(starR<=fBX){
+      // étoile entièrement dans la zone remplie
+      if(imgFill){drawCover(ctx,imgFill,cx-r,starCY-r,2*r,2*r);}
+      else{ctx.fillStyle=getFillStyle(ctx,barX,starCY-r,barX+barW,starCY+r,fC1.value,fC2.value,fillGrad,fillDir);ctx.fillRect(starL,starCY-r,2*r,2*r);}
+    } else if(starL>=fBX){
+      // étoile entièrement dans la zone vide
+      if(imgEmpty){drawCover(ctx,imgEmpty,cx-r,starCY-r,2*r,2*r);}
+      else{ctx.fillStyle=emptyColor;ctx.fillRect(starL,starCY-r,2*r,2*r);}
+    } else {
+      // étoile à cheval sur la frontière : coupée en deux, un seul clip (l'étoile) reste actif,
+      // pas de second clip rectangulaire imbriqué (sinon perte d'anti-aliasing sur les pointes)
+      if(imgFill){
+        ctx.save();ctx.beginPath();ctx.rect(starL,starCY-r,fBX-starL,2*r);ctx.clip();
+        drawCover(ctx,imgFill,cx-r,starCY-r,2*r,2*r);
+        ctx.restore();
+      } else {
+        ctx.fillStyle=getFillStyle(ctx,barX,starCY-r,barX+barW,starCY+r,fC1.value,fC2.value,fillGrad,fillDir);
+        ctx.fillRect(starL,starCY-r,fBX-starL,2*r);
+      }
+      if(imgEmpty){
+        ctx.save();ctx.beginPath();ctx.rect(fBX,starCY-r,starR-fBX,2*r);ctx.clip();
+        drawCover(ctx,imgEmpty,cx-r,starCY-r,2*r,2*r);
+        ctx.restore();
+      } else {
+        ctx.fillStyle=emptyColor;
+        ctx.fillRect(fBX,starCY-r,starR-fBX,2*r);
+      }
+    }
+    ctx.restore();
+  }
+}
+
+// 16. CHEVRONS (12 flèches directionnelles)
+// 17. ICÔNE DE BATTERIE (corps arrondi + ergot à droite, 5 cellules, remplissage progressif)
+// 17. ICÔNE DE BATTERIE (contour = couleur "Contour", pas de % forcé, pas de "Zone vide")
+function renderBatterie(ctx,p){
+  const bX2=600, bY2=150, bW2=800, bH2=100, pct=parseInt(pctSlider.value), fillW=Math.round((bW2-24)*pct/100), cX=bX2+bW2+10;
+  paintBackground(ctx);
+  ctx.font='700 34px Inter,sans-serif';ctx.textBaseline='middle';ctx.textAlign='center';
+  if(imgLogo){const lH=95,lW=imgLogo.width/imgLogo.height*lH;ctx.drawImage(imgLogo,W/2-lW/2,50-lH/2,lW,lH);}
+  else{ctx.fillStyle=txtColor.value;ctx.fillText(`${titleInp.value||''}`, W/2, 50);}
+  // Contour + ergot : couleur/dégradé "Contour" (bC1/bC2), pas "Zone vide"
+  const outline = getFillStyle(ctx,bX2,bY2,bX2+bW2,bY2+bH2,bC1.value,bC2.value,borderGrad,borderDir);
+  if(imgBorder){
+    ctx.save(); ctx.beginPath(); roundRectPath(ctx,bX2,bY2,bW2,bH2,12); ctx.lineWidth=8; ctx.clip();
+    drawCover(ctx,imgBorder,bX2-4,bY2-4,bW2+8,bH2+8);
+    ctx.restore();
+    ctx.fillStyle=bC1.value; ctx.fillRect(cX, bY2+20, 10, bH2-40);
+  } else {
+    ctx.strokeStyle=outline; ctx.lineWidth=8;
+    roundRectPath(ctx,bX2,bY2,bW2,bH2,12); ctx.stroke();
+    ctx.fillStyle=outline; ctx.fillRect(cX, bY2+20, 10, bH2-40);
+  }
+  // Remplissage intérieur
+  ctx.save(); ctx.beginPath(); ctx.rect(bX2+12, bY2+12, fillW, bH2-24); ctx.clip();
+  if(imgFill){drawCover(ctx,imgFill,bX2+12,bY2+12,bW2-24,bH2-24);}
+  else{ctx.fillStyle=getFillStyle(ctx,bX2+12,bY2+12,bX2+bW2-12,bY2+bH2-12,fC1.value,fC2.value,fillGrad,fillDir); ctx.fillRect(bX2+12,bY2+12,bW2-24,bH2-24);}
+  ctx.restore();
+}
+
+// 16. BARRE CHEVRON (12 chevrons, remplissage progressif — le chevron à la frontière est coupé, pas basculé d'un coup)
+function renderChevrons(ctx,p){
+  const n=12,cW=138,cH=180,notch=42,step=146;
+  const totalW=n*step-8,startX=(W-totalW)/2,topY=130;
+  const pct=parseInt(pctSlider.value),fBX=startX+totalW*pct/100;
+  paintBackground(ctx);
+  ctx.font='700 36px Inter,sans-serif';ctx.textBaseline='middle';ctx.textAlign='center';
+  if(imgLogo){const lH=95,lW=imgLogo.width/imgLogo.height*lH;ctx.drawImage(imgLogo,W/2-lW/2,70-lH/2,lW,lH);}
+  else{ctx.fillStyle=txtColor.value;ctx.fillText(pctLabel(titleInp.value, pct),W/2,70);}
+  function addChevron(sx){
+    const midY=topY+cH/2;
+    ctx.moveTo(sx,topY);
+    ctx.lineTo(sx+cW-notch,topY);
+    ctx.lineTo(sx+cW,midY);
+    ctx.lineTo(sx+cW-notch,topY+cH);
+    ctx.lineTo(sx,topY+cH);
+    ctx.lineTo(sx+notch,midY);
+    ctx.closePath();
+  }
+  for(let i=0;i<n;i++){
+    const sx=startX+i*step;
+    const chevL=sx, chevR=sx+cW;
+    ctx.save();ctx.beginPath();addChevron(sx);ctx.clip();
+    if(chevR<=fBX){
+      // chevron entièrement dans la zone remplie
+      if(imgFill){drawCover(ctx,imgFill,sx,topY,cW,cH);}
+      else{ctx.fillStyle=getFillStyle(ctx,startX,topY,startX+totalW,topY+cH,fC1.value,fC2.value,fillGrad,fillDir);ctx.fillRect(chevL,topY,cW,cH);}
+    } else if(chevL>=fBX){
+      // chevron entièrement dans la zone vide
+      if(imgEmpty){drawCover(ctx,imgEmpty,sx,topY,cW,cH);}
+      else{ctx.fillStyle=emptyColor;ctx.fillRect(chevL,topY,cW,cH);}
+    } else {
+      // chevron à cheval sur la frontière : coupé en deux, un seul clip (le chevron) reste actif,
+      // pas de second clip rectangulaire imbriqué (sinon perte d'anti-aliasing sur les pointes)
+      if(imgFill){
+        ctx.save();ctx.beginPath();ctx.rect(chevL,topY,fBX-chevL,cH);ctx.clip();
+        drawCover(ctx,imgFill,sx,topY,cW,cH);
+        ctx.restore();
+      } else {
+        ctx.fillStyle=getFillStyle(ctx,startX,topY,startX+totalW,topY+cH,fC1.value,fC2.value,fillGrad,fillDir);
+        ctx.fillRect(chevL,topY,fBX-chevL,cH);
+      }
+      if(imgEmpty){
+        ctx.save();ctx.beginPath();ctx.rect(fBX,topY,chevR-fBX,cH);ctx.clip();
+        drawCover(ctx,imgEmpty,sx,topY,cW,cH);
+        ctx.restore();
+      } else {
+        ctx.fillStyle=emptyColor;
+        ctx.fillRect(fBX,topY,chevR-fBX,cH);
+      }
+    }
+    ctx.restore();
+  }
+}
+
+// 17. TWITTER II (cadre noir + espace blanc + barre pleine, sans texte)
+function renderTwitter2(ctx,p){
+  const pX=100, pY=100, pW=1800, pH=200; // zone de remplissage (mesurée : ratio 9:1, identique à l'image de référence)
+  const gap=48, bT=4; // padding blanc entre le contour et la barre + épaisseur du contour (mesures pixel perfect de l'image de référence)
+  const pct=parseInt(pctSlider.value), fillW=Math.round(pW*pct/100);
+
+  paintBackground(ctx);
+
+  ctx.save(); ctx.beginPath(); ctx.rect(pX,pY,pW,pH); ctx.clip();
+  if(pct>0){
+    ctx.save(); ctx.beginPath(); ctx.rect(pX,pY,fillW,pH); ctx.clip();
+    if(imgFill){drawCover(ctx,imgFill,pX,pY,pW,pH);}
+    else{ctx.fillStyle=getFillStyle(ctx,pX,pY,pX+pW,pY+pH,fC1.value,fC2.value,fillGrad,fillDir); ctx.fillRect(pX,pY,pW,pH);}
+    ctx.restore();
+  }
+  if(pct<100){
+    ctx.save(); ctx.beginPath(); ctx.rect(pX+fillW,pY,pW-fillW,pH); ctx.clip();
+    if(imgEmpty){drawCover(ctx,imgEmpty,pX,pY,pW,pH);}
+    else{ctx.fillStyle=emptyColor; ctx.fillRect(pX+fillW,pY,pW-fillW,pH);}
+    ctx.restore();
+  }
+  ctx.restore();
+
+  // Cadre : rectangle espacé de la barre par le padding blanc (couleur de fond visible entre les deux)
+  ctx.save();
+  if(imgBorder){
+    ctx.beginPath();
+    ctx.rect(pX-gap-bT/2, pY-gap-bT/2, pW+gap*2+bT, pH+gap*2+bT);
+    ctx.rect(pX-gap+bT/2, pY-gap+bT/2, pW+gap*2-bT, pH+gap*2-bT);
+    ctx.clip('evenodd');
+    drawCover(ctx,imgBorder,pX-gap-bT,pY-gap-bT,pW+gap*2+bT*2,pH+gap*2+bT*2);
+  } else {
+    ctx.beginPath(); ctx.rect(pX-gap, pY-gap, pW+gap*2, pH+gap*2);
+    ctx.lineWidth = bT;
+    ctx.strokeStyle = getFillStyle(ctx,pX,pY,pX+pW,pY+pH,bC1.value,bC2.value,borderGrad,borderDir);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+const STYLES = {
+  default: renderDefault,
+  twitter2: renderTwitter2,
+  minimaliste: renderMinimaliste,
+  arrondie: renderArrondie,
+  lignefine: renderLigneFine,
+  coeurs: renderCoeurs,
+  coeursvide: renderCoeursvide,
+  doubleligne: renderDoubleLigne,
+  points: renderPoints,
+  rayures: renderRayures,
+  jv8bit: renderJV8bit,
+  jvchargement: renderJVChargement,
+  escalier: renderEscalier,
+  grille: renderGrille,
+  etoiles: renderEtoiles,
+  chevrons: renderChevrons,
+  batterie: renderBatterie
+};
+const STYLE_LABELS = {
+  default: '𝕏 Twitter (X)',
+  twitter2: 'Twitter II',
+  minimaliste: 'Minimaliste',
+  arrondie: 'Arrondie',
+  lignefine: 'Ligne fine',
+  coeurs: 'Cœurs',
+  coeursvide: 'Cœurs Vide',
+  doubleligne: 'Double ligne',
+  points: 'Points',
+  rayures: 'Rayures diagonales',
+  jv8bit: 'Jeu vidéo 8-bit',
+  jvchargement: 'Jeu vidéo chargement',
+  escalier: 'Marche par étape',
+  grille: 'Grille',
+  etoiles: 'Étoiles',
+  chevrons: 'Chevron',
+  batterie: 'Icône batterie'
+};
+const STYLE_HIDES_BORDER = ['minimaliste', 'lignefine', 'coeurs', 'coeursvide', 'doubleligne', 'points', 'escalier', 'grille', 'etoiles', 'chevrons'];
+const STYLE_HIDES_EMPTY = ['batterie']; // La batterie n'a pas de "zone vide" : son contour utilise la couleur "Contour"
+const STYLE_HIDES_PCT = ['default', 'minimaliste', 'arrondie', 'rayures', 'jv8bit', 'jvchargement', 'escalier', 'batterie', 'twitter2']; // Styles qui n'affichent pas le pourcentage dans le texte
+const STYLE_HIDES_LOGO = ['twitter2']; // Styles qui ne supportent pas de logo
+const STYLE_HIDES_TITLE = ['twitter2']; // Styles qui n'affichent aucun texte
+
+
+
+function updatePreview(){
+  previewWrap.style.background = bgTransparent
+    ? 'linear-gradient(135deg, rgba(255,255,255,.035) 25%, transparent 25%) -12px 0/24px 24px,'
+      + 'linear-gradient(225deg, rgba(255,255,255,.035) 25%, transparent 25%) -12px 0/24px 24px,'
+      + 'linear-gradient(315deg, rgba(255,255,255,.035) 25%, transparent 25%) 0 0/24px 24px,'
+      + 'linear-gradient(45deg, rgba(255,255,255,.035) 25%, transparent 25%) 0 0/24px 24px, #0e0e0e'
+    : ((currentStyle === 'default' && imgBg) ? 'transparent' : bgCol.value);
+  const dpr=window.devicePixelRatio||1;
+  const ctx = canvas.getContext('2d');
+  const s = dpr;
+  const ch = styleCanvasH(currentStyle);
+  canvas.width = W*s; canvas.height = ch*s;
+  ctx.scale(s,s);
+  ctx.clearRect(0,0,W,ch);
+  STYLES[currentStyle](ctx, {});
+  canvas.style.width='100%'; canvas.style.maxWidth='640px'; canvas.style.height='auto';
+  // La grille (8 rangées) est plus haute que les autres styles : on ajoute une barre de
+  // scroll uniquement pour cette barre si l'aperçu dépasse la hauteur disponible.
+  previewWrap.classList.toggle('tall-preview', currentStyle==='grille');
+  const nameEl=g('currentStyleName'); if(nameEl) nameEl.textContent=STYLE_LABELS[currentStyle];
+  updateWatermark();
+}
+
+// Filigrane anti-capture sur l'aperçu (plan Free uniquement) : une capture d'écran donne
+// une image filigranée, seul le vrai téléchargement (soumis aux règles du plan) reste propre.
+function updateWatermark(){
+  const wm = g('previewWatermark');
+  if(!wm) return;
+  if(getPlan() === 'free'){
+    if(!wm.dataset.built){
+      let html = '';
+      for(let i=0;i<14;i++) html += '<span>PBG · APERÇU</span>';
+      wm.innerHTML = html;
+      wm.dataset.built = '1';
+    }
+    wm.style.display = 'flex';
+    // Fond transparent (damier clair) ou couleur de fond claire → filigrane noir plutôt que blanc, sinon illisible
+    wm.classList.toggle('on-light', bgTransparent || isLightColor(bgCol.value));
+  } else {
+    wm.style.display = 'none';
+  }
+}
+function isLightColor(hex){
+  const h = (hex||'').replace('#','');
+  if(h.length!==6) return false;
+  const r=parseInt(h.slice(0,2),16), g2=parseInt(h.slice(2,4),16), b=parseInt(h.slice(4,6),16);
+  const luminance = (0.299*r + 0.587*g2 + 0.114*b) / 255;
+  return luminance > 0.6;
+}
+
+function updatePctSliderFill(){
+  const min=+pctSlider.min, max=+pctSlider.max, val=+pctSlider.value;
+  const pct=(val-min)/(max-min)*100;
+  const accent=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#FFD400';
+  const track=document.body.classList.contains('theme-light')?getComputedStyle(document.documentElement).getPropertyValue('--border').trim():'#27272a';
+  pctSlider.style.background=`linear-gradient(to right, ${accent} 0%, ${accent} ${pct}%, ${track} ${pct}%, ${track} 100%)`;
+}
+pctSlider.addEventListener('input',()=>{pctBox.value=pctSlider.value; updatePctSliderFill(); updatePreview();});
+pctBox.addEventListener('input',()=>{let v=Math.min(100,Math.max(0,parseInt(pctBox.value)||0)); pctBox.value=v; pctSlider.value=v; updatePctSliderFill(); updatePreview();});
+updatePctSliderFill();
+
+// --- CHARGEMENT D'IMAGES ---
+function loadImg(file,cb,nameEl,delBtn,ctrlEl){
+  const reader=new FileReader();
+  reader.onload=e=>{const img=new Image(); img.onload=()=>{cb(img); nameEl.textContent=file.name; delBtn.style.display='inline-block'; if(ctrlEl)ctrlEl.style.opacity='.3'; updatePreview();}; img.src=e.target.result;};
+  reader.readAsDataURL(file);
+}
+g('logoFile').addEventListener('change',e=>{if(e.target.files[0])loadImg(e.target.files[0],img=>imgLogo=img,g('logoName'),g('delLogo'),null);});
+g('fillFile').addEventListener('change',e=>{if(e.target.files[0])loadImg(e.target.files[0],img=>imgFill=img,g('fillName'),g('delFill'),g('fillColorCtrl'));});
+g('borderFile').addEventListener('change',e=>{if(e.target.files[0])loadImg(e.target.files[0],img=>imgBorder=img,g('borderName'),g('delBorder'),g('borderColorCtrl'));});
+g('emptyFile').addEventListener('change',e=>{if(e.target.files[0])loadImg(e.target.files[0],img=>imgEmpty=img,g('emptyName'),g('delEmpty'),g('emptyColorRow'));});
+g('bgFile').addEventListener('change',e=>{if(e.target.files[0])loadImg(e.target.files[0],img=>imgBg=img,g('bgFileName'),g('delBg'),null);});
+g('delLogo').addEventListener('click',()=>{imgLogo=null; g('logoFile').value=''; g('logoName').textContent='—'; g('delLogo').style.display='none'; updatePreview();});
+g('delFill').addEventListener('click',()=>{imgFill=null; g('fillFile').value=''; g('fillName').textContent='—'; g('delFill').style.display='none'; g('fillColorCtrl').style.opacity='1'; updatePreview();});
+g('delBorder').addEventListener('click',()=>{imgBorder=null; g('borderFile').value=''; g('borderName').textContent='—'; g('delBorder').style.display='none'; g('borderColorCtrl').style.opacity='1'; updatePreview();});
+g('delEmpty').addEventListener('click',()=>{imgEmpty=null; g('emptyFile').value=''; g('emptyName').textContent='—'; g('delEmpty').style.display='none'; g('emptyColorRow').style.opacity='1'; updatePreview();});
+g('delBg').addEventListener('click',()=>{imgBg=null; g('bgFile').value=''; g('bgFileName').textContent='—'; g('delBg').style.display='none'; updatePreview();});
+
+// --- GRADIENTS (interrupteur pastille + boutons HORIZ/VERT) ---
+function togGrad(type){
+  if(type==='f'){
+    fillGrad=!fillGrad;
+    fTog.classList.toggle('on',fillGrad);
+    fC2Box.style.opacity=fillGrad?'1':'.3'; fC2Text.style.opacity=fillGrad?'1':'.3'; fArrow.style.opacity=fillGrad?'1':'.3';
+    g('fDirs').querySelectorAll('.gradient-btn').forEach(b=>b.disabled=!fillGrad);
+  } else {
+    borderGrad=!borderGrad;
+    bTog.classList.toggle('on',borderGrad);
+    bC2Box.style.opacity=borderGrad?'1':'.3'; bC2Text.style.opacity=borderGrad?'1':'.3'; bArrow.style.opacity=borderGrad?'1':'.3';
+    g('bDirs').querySelectorAll('.gradient-btn').forEach(b=>b.disabled=!borderGrad);
+  }
+  updatePreview();
+}
+fTog.addEventListener('click',()=>togGrad('f'));
+bTog.addEventListener('click',()=>togGrad('b'));
+g('fDirs').querySelectorAll('.gradient-btn').forEach(btn=>{btn.addEventListener('click',()=>{g('fDirs').querySelectorAll('.gradient-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); fillDir=btn.dataset.d; updatePreview();});});
+g('bDirs').querySelectorAll('.gradient-btn').forEach(btn=>{btn.addEventListener('click',()=>{g('bDirs').querySelectorAll('.gradient-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); borderDir=btn.dataset.d; updatePreview();});});
+g('fDirs').querySelector('[data-d="h"]').classList.add('active');
+g('bDirs').querySelector('[data-d="h"]').classList.add('active');
+
+// --- ZONE VIDE (chips rapides + pastille couleur perso) ---
+document.querySelectorAll('.zone-chip[data-v]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.zone-chip').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+    emptyColor=btn.dataset.v;
+    g('eCustomCol').value=emptyColor; g('eColorBox').style.backgroundColor=emptyColor; g('eColorText').value=emptyColor;
+    updatePreview();
+  });
+});
+
+// --- SYNCHRO PASTILLE / PICKER NATIF / CHAMP HEX ---
+function setupColorInput(input, box, text, onChange){
+  input.addEventListener('input', ()=>{ box.style.backgroundColor=input.value; text.value=input.value; if(onChange)onChange(input.value); updatePreview(); });
+  text.addEventListener('input', ()=>{
+    let v=text.value;
+    if(/^#[0-9a-fA-F]{6}$/.test(v)){ input.value=v; box.style.backgroundColor=v; if(onChange)onChange(v); updatePreview(); }
+  });
+}
+setupColorInput(fC1, g('fC1Box'), g('fC1Text'));
+setupColorInput(fC2, fC2Box, fC2Text);
+setupColorInput(bC1, g('bC1Box'), g('bC1Text'));
+setupColorInput(bC2, bC2Box, bC2Text);
+setupColorInput(bgCol, g('bgColorBox'), g('bgColorText'));
+
+// --- FOND TRANSPARENT (PNG) ---
+g('bgTransparentChip').addEventListener('click', ()=>{
+  bgTransparent = !bgTransparent;
+  g('bgTransparentChip').classList.toggle('on', bgTransparent);
+  g('bgColorCtrl').style.opacity = bgTransparent ? '.3' : '1';
+  g('bgCol').disabled = bgTransparent;
+  updatePreview();
+});
+setupColorInput(g('eCustomCol'), g('eColorBox'), g('eColorText'), v=>{
+  emptyColor=v;
+  document.querySelectorAll('.zone-chip').forEach(b=>b.classList.toggle('on', b.dataset.v===v));
+});
+
+// --- INPUTS GÉNÉRAUX ---
+[titleInp,txtColor,bgCol,fC1,fC2,bC1,bC2].forEach(el=>el.addEventListener('input',updatePreview));
+g('showPctTog').addEventListener('click', ()=>{
+  showPct = !showPct;
+  g('showPctTog').classList.toggle('on', showPct);
+  updatePreview();
+});
+
+// --- TÉLÉCHARGEMENT ---
+// Dissuasion anti-fraude : bloque le clic droit ("Enregistrer l'image sous...") et le glisser-déposer
+// de l'aperçu partout dans le générateur. Ces mesures ne bloquent pas une vraie capture d'écran
+// (impossible à empêcher depuis le web) — elles ajoutent juste de la friction pour un usage occasionnel.
+const genPage = g('page-generateur');
+if(genPage){
+  genPage.addEventListener('contextmenu', e => e.preventDefault());
+  genPage.addEventListener('dragstart', e => e.preventDefault());
+}
+
+g('dlBtn').addEventListener('click',()=>{
+  const btn=g('dlBtn'); btn.disabled=true; btn.textContent='Export en cours…';
+  setTimeout(()=>{
+    const exp=document.createElement('canvas');
+    const s=3;
+    const ch = styleCanvasH(currentStyle);
+    exp.width=W*s; exp.height=ch*s;
+    const ctx=exp.getContext('2d');
+    ctx.scale(s,s);
+    ctx.clearRect(0,0,W,ch);
+    STYLES[currentStyle](ctx, {});
+    const a=document.createElement('a'); a.download='progress-bar-hd.png'; a.href=exp.toDataURL('image/png'); a.click();
+    btn.textContent='⬇ Télécharger (PNG HD)'; btn.disabled=false;
+  },50);
+});
+
+// --- MENU HAMBURGER (DRAWER, mobile) ---
+const drawer=g('drawer'), overlay=g('drawerOverlay');
+function openDrawer(){ drawer.classList.add('open'); overlay.classList.add('open'); }
+function closeDrawer(){ drawer.classList.remove('open'); overlay.classList.remove('open'); }
+g('hamburgerBtn').addEventListener('click', openDrawer);
+g('closeDrawer').addEventListener('click', closeDrawer);
+overlay.addEventListener('click', closeDrawer);
+
+// --- NAVIGATION (pages) ---
+const ICON_HOUSE = '<svg class="icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>';
+const ICON_GRID = '<svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>';
+const ICON_HEART = '<svg class="icon" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>';
+const ICON_BOOKMARK = '<svg class="icon" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>';
+const ICON_GEAR = '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>';
+const ICON_ROBOT = '<svg class="icon" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8.01" y2="16"></line><line x1="16" y1="16" x2="16.01" y2="16"></line></svg>';
+const ICON_CROWN = '<svg class="icon" viewBox="0 0 24 24"><path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z"></path><path d="M3 20h18"></path></svg>';
+// --- PLAN (simulation locale en attendant un vrai système de compte/paiement) ---
+function checkPlanExpiry(){
+  try{
+    const cancelled = localStorage.getItem('pbg_plan_cancelled')==='true';
+    const billedAt = parseInt(localStorage.getItem('pbg_plan_billed_at')||'0',10);
+    if(cancelled && billedAt){
+      const nextBilling = billedAt + 30*24*60*60*1000;
+      if(Date.now() >= nextBilling){
+        localStorage.setItem('pbg_plan','free');
+        localStorage.removeItem('pbg_plan_billed_at');
+        localStorage.removeItem('pbg_plan_cancelled');
+      }
+    }
+  }catch(e){}
+}
+function getPlan(){ checkPlanExpiry(); try{ return localStorage.getItem('pbg_plan') || 'free'; }catch(e){ return 'free'; } }
+function setPlan(p){
+  try{
+    localStorage.setItem('pbg_plan', p);
+    if(p==='free'){ localStorage.removeItem('pbg_plan_billed_at'); localStorage.removeItem('pbg_plan_cancelled'); }
+    else { localStorage.setItem('pbg_plan_billed_at', Date.now().toString()); localStorage.setItem('pbg_plan_cancelled','false'); }
+  }catch(e){}
+  updateWatermark();
+}
+function isPlanCancelled(){ try{ return localStorage.getItem('pbg_plan_cancelled')==='true'; }catch(e){ return false; } }
+function getNextBillingDate(){
+  try{
+    const billedAt = parseInt(localStorage.getItem('pbg_plan_billed_at')||'0',10);
+    if(!billedAt) return null;
+    return new Date(billedAt + 30*24*60*60*1000);
+  }catch(e){ return null; }
+}
+function cancelSubscription(){ try{ localStorage.setItem('pbg_plan_cancelled','true'); }catch(e){} }
+function reactivateSubscription(){ try{ localStorage.setItem('pbg_plan_cancelled','false'); }catch(e){} }
+
+const ICON_CROWN_BADGE = '<svg class="crown-badge" viewBox="0 0 24 24" fill="currentColor"><path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z"></path><path d="M3 20h18" stroke="currentColor" stroke-width="2"></path></svg>';
+const NAV_ITEMS = [
+  {id:'generateur', icon:ICON_HOUSE,    label:'Générateur'},
+  {id:'styles',     icon:ICON_GRID,     label:'Styles de barres', tag:'17 styles', crownIf:()=>getPlan()==='free'},
+  {id:'favoris',    icon:ICON_HEART,    label:'Favoris'},
+  {id:'saved',      icon:ICON_BOOKMARK, label:'Barres enregistrées'},
+  {id:'settings',   icon:ICON_GEAR,     label:'Paramètres'},
+  {id:'automation', icon:ICON_ROBOT,    label:'Automatisation', crownIf:()=>getPlan()!=='pro'},
+  {id:'abonnement', icon:ICON_CROWN,    label:'Abonnement'}
+];
+const styleGrid = g('styleGrid');
+const favGrid = g('favGrid');
+
+function goToPage(id){
+  checkPlanExpiry();
+  renderNav(g('sidebarNav'));
+  renderNav(g('drawerNav'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active', p.id==='page-'+id));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.page===id));
+  if(id==='styles') buildStyleGrid(styleGrid, false);
+  if(id==='favoris') buildStyleGrid(favGrid, true);
+  if(id==='saved') renderSavedBars();
+  if(id==='abonnement') renderAbonnement();
+  if(id==='automation') renderAutomation();
+  closeDrawer();
+  g('content')?.scrollTo?.(0,0);
+}
+
+function renderNav(container){
+  container.innerHTML='';
+  NAV_ITEMS.forEach(item=>{
+    const el = container===g('sidebarNav') ? document.createElement('button') : document.createElement('div');
+    el.className='nav-item'+(container.tagName==='DIV'?' drawer-item':'');
+    el.dataset.page=item.id;
+    const showCrown = item.crownIf && item.crownIf();
+    const rightBadge = showCrown ? ICON_CROWN_BADGE : (item.tag ? `<span class="tag">${item.tag}</span>` : '');
+    el.innerHTML = item.icon + `<span>${item.label}</span>` + rightBadge;
+    el.addEventListener('click', ()=>goToPage(item.id));
+    container.appendChild(el);
+  });
+}
+goToPage('generateur');
+g('changeStyleBtn').addEventListener('click', ()=>goToPage('styles'));
+g('proBtnSidebar').addEventListener('click', ()=>goToPage('abonnement'));
+g('proBtnDrawer').addEventListener('click', ()=>goToPage('abonnement'));
+function applyTheme(isDark){
+  document.body.classList.toggle('theme-light', !isDark);
+  g('themeToggle').classList.toggle('on', isDark);
+  try{ localStorage.setItem('pbg_theme', isDark ? 'dark' : 'light'); }catch(e){}
+  if(typeof updatePctSliderFill==='function') updatePctSliderFill();
+}
+g('themeWrap').addEventListener('click', ()=>{
+  const isCurrentlyDark = !document.body.classList.contains('theme-light');
+  applyTheme(!isCurrentlyDark);
+});
+(function initTheme(){
+  let saved = null;
+  try{ saved = localStorage.getItem('pbg_theme'); }catch(e){}
+  applyTheme(saved !== 'light');
+})();
+
+const STYLE_DESC = {
+  default: 'Style original avec contour',
+  twitter2: 'Style original avec contour, sans texte',
+  minimaliste: 'Barre épurée sans contour',
+  arrondie: 'Pilule avec contour détaché, espacé',
+  lignefine: 'Ligne fine et minimaliste',
+  coeurs: '10 cœurs pixel art pleins',
+  coeursvide: '10 cœurs pixel art en contour',
+  doubleligne: 'Ligne 1 (0-50%) puis ligne 2 (50-100%)',
+  points: '10 points qui se remplissent progressivement',
+  rayures: 'Rayures diagonales, cadre fermé, titre au-dessus',
+  jv8bit: 'Comme Arrondie, coins en marches pixel 8-bit',
+  jvchargement: 'Segments inclinés, titre au-dessus, cadre espacé',
+  escalier: 'Blocs qui montent en escalier',
+  grille: 'Grille de 160 cases, idéale pour les images',
+  etoiles: '10 étoiles qui se remplissent progressivement',
+  chevrons: 'Chevrons inclinés type flèches',
+  batterie: 'Icône de batterie, 5 cellules, ergot à droite'
+};
+
+// --- FAVORIS (localStorage) ---
+function getFavorites(){ try{ return JSON.parse(localStorage.getItem('pbg_favoris')||'[]'); }catch(e){ return []; } }
+function setFavorites(arr){ try{ localStorage.setItem('pbg_favoris', JSON.stringify(arr)); }catch(e){} }
+function isFavorite(id){ return getFavorites().includes(id); }
+function toggleFavorite(id){
+  let favs = getFavorites();
+  favs = favs.includes(id) ? favs.filter(f=>f!==id) : [...favs, id];
+  setFavorites(favs);
+}
+
+// --- GRILLE DES STYLES (réutilisée pour Styles de barres + Favoris) ---
+// Chaque style a son propre jeu de couleurs, totalement indépendant des autres : on garde une
+// map { [styleId]: {fill,border,bg,empty} } au lieu d'un unique backup partagé entre tous les
+// styles "non-Twitter II", pour que personnaliser un style ne touche jamais un autre style.
+const DEFAULT_STYLE_COLORS = { fill:'#FFE000', border:'#FFE000', bg:'#000000', empty:'#ffffff', fill2:'#FF8C00', fillGrad:false, fillDir:'h', border2:'#FF0080', borderGrad:false, borderDir:'h', bgTransparent:false };
+const TWITTER2_DEFAULT_COLORS = { fill:'#FFE000', border:'#000000', bg:'#ffffff', empty:'#000000', fill2:'#FF8C00', fillGrad:false, fillDir:'h', border2:'#FF0080', borderGrad:false, borderDir:'h', bgTransparent:false };
+let styleColorsMap = {};
+function defaultColorsFor(id){ return id === 'twitter2' ? TWITTER2_DEFAULT_COLORS : DEFAULT_STYLE_COLORS; }
+function colorsFor(id){ return styleColorsMap[id] || defaultColorsFor(id); }
+
+function currentUIColors(){
+  return {
+    fill:fC1.value, border:bC1.value, bg:bgCol.value, empty:emptyColor,
+    fill2:fC2.value, fillGrad, fillDir,
+    border2:bC2.value, borderGrad, borderDir,
+    bgTransparent
+  };
+}
+function applyColorsToUI(c){
+  const setC = (input, box, text, val) => { if(input)input.value=val; if(box)box.style.backgroundColor=val; if(text)text.value=val; };
+  setC(g('fC1'), g('fC1Box'), g('fC1Text'), c.fill);
+  setC(g('bC1'), g('bC1Box'), g('bC1Text'), c.border);
+  setC(g('bgCol'), g('bgColorBox'), g('bgColorText'), c.bg);
+  emptyColor = c.empty;
+  setC(g('eCustomCol'), g('eColorBox'), g('eColorText'), c.empty);
+  const emptyRow = g('emptyColorRow');
+  if(emptyRow) emptyRow.querySelectorAll('.zone-chip').forEach(b=>b.classList.toggle('on', b.dataset.v===c.empty));
+
+  setC(g('fC2'), g('fC2Box'), g('fC2Text'), c.fill2 ?? '#FF8C00');
+  setC(g('bC2'), g('bC2Box'), g('bC2Text'), c.border2 ?? '#FF0080');
+  fillGrad = !!c.fillGrad; borderGrad = !!c.borderGrad;
+  fillDir = c.fillDir || 'h'; borderDir = c.borderDir || 'h';
+  fTog.classList.toggle('on', fillGrad);
+  fC2Box.style.opacity = fillGrad?'1':'.3'; fC2Text.style.opacity = fillGrad?'1':'.3'; fArrow.style.opacity = fillGrad?'1':'.3';
+  g('fDirs').querySelectorAll('.gradient-btn').forEach(b=>{ b.disabled=!fillGrad; b.classList.toggle('active', b.dataset.d===fillDir); });
+  bTog.classList.toggle('on', borderGrad);
+  bC2Box.style.opacity = borderGrad?'1':'.3'; bC2Text.style.opacity = borderGrad?'1':'.3'; bArrow.style.opacity = borderGrad?'1':'.3';
+  g('bDirs').querySelectorAll('.gradient-btn').forEach(b=>{ b.disabled=!borderGrad; b.classList.toggle('active', b.dataset.d===borderDir); });
+
+  bgTransparent = !!c.bgTransparent;
+  g('bgTransparentChip').classList.toggle('on', bgTransparent);
+  g('bgColorCtrl').style.opacity = bgTransparent ? '.3' : '1';
+  g('bgCol').disabled = bgTransparent;
+}
+
+function buildStyleGrid(gridEl, favoritesOnly){
+  if(!gridEl) return;
+  gridEl.innerHTML = '';
+  const favs = getFavorites();
+  const ids = favoritesOnly ? Object.keys(STYLES).filter(id=>favs.includes(id)) : Object.keys(STYLES);
+
+  if(favoritesOnly && ids.length===0){
+    gridEl.innerHTML = `<div class="empty-state"><div class="e">🤍</div><div class="t">Aucun favori pour l'instant</div><div class="d">Ouvrez "Styles de barres" et cliquez sur le cœur d'un style pour le retrouver ici.</div></div>`;
+    return;
+  }
+
+  ids.forEach(id=>{
+    const card = document.createElement('div');
+    card.className = 'style-card' + (id === currentStyle ? ' on' : '');
+    card.dataset.s = id;
+
+    const favBtn = document.createElement('button');
+    favBtn.className = 'fav-btn' + (isFavorite(id) ? ' on' : '');
+    favBtn.textContent = '♥';
+    favBtn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      toggleFavorite(id);
+      favBtn.classList.toggle('on', isFavorite(id));
+      if(favoritesOnly) buildStyleGrid(gridEl, true);
+    });
+    card.appendChild(favBtn);
+
+    const thumb = document.createElement('canvas');
+    card.appendChild(thumb);
+
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'name';
+    nameDiv.textContent = STYLE_LABELS[id];
+    card.appendChild(nameDiv);
+
+    const descDiv = document.createElement('div');
+    descDiv.className = 'desc';
+    descDiv.textContent = STYLE_DESC[id] || '';
+    card.appendChild(descDiv);
+    gridEl.appendChild(card);
+
+    // Miniature
+    const s = 2;
+    const thumbH = styleCanvasH(id);
+    thumb.width = W*s; thumb.height = thumbH*s;
+    const ctx = thumb.getContext('2d');
+    ctx.scale(s,s);
+    ctx.clearRect(0,0,W,thumbH);
+    const oldTitle = titleInp.value;
+    const oldPct = pctSlider.value;
+    const liveColors = currentUIColors();
+    titleInp.value = 'Progress Bar Generator';
+    pctSlider.value = 50;
+    // Chaque style utilise ses propres couleurs ET ses propres images pour la miniature,
+    // indépendamment des autres styles.
+    const liveImages = currentUIImages();
+    styleColorsMap[currentStyle] = liveColors;
+    styleImagesMap[currentStyle] = liveImages;
+    applyColorsToUI(colorsFor(id));
+    applyImagesToUI(styleImagesMap[id]);
+    STYLES[id](ctx, {});
+    titleInp.value = oldTitle;
+    pctSlider.value = oldPct;
+    applyColorsToUI(liveColors);
+    applyImagesToUI(liveImages);
+    thumb.style.width = '100%';
+    thumb.style.height = 'auto';
+
+    card.addEventListener('click', ()=>{
+      const prevStyle = currentStyle;
+      // On mémorise les couleurs et les images du style qu'on quitte, puis on applique
+      // celles (propres) du style qu'on rejoint.
+      styleColorsMap[prevStyle] = currentUIColors();
+      styleImagesMap[prevStyle] = currentUIImages();
+      currentStyle = id;
+      applyColorsToUI(colorsFor(id));
+      applyImagesToUI(styleImagesMap[id]);
+      document.querySelectorAll('.style-card').forEach(c=>c.classList.remove('on'));
+      card.classList.add('on');
+      const borderCard = g('borderCard'), fillCard = g('fillCard'), emptyCard = g('emptyCard'), bgCard = g('bgCard'), pctDisplayRow = g('pctDisplayRow'), logoCard = g('logoCard'), titleRow = g('titleRow');
+      if(titleRow) titleRow.style.display = STYLE_HIDES_TITLE.includes(id) ? 'none' : '';
+      if(borderCard) borderCard.style.display = STYLE_HIDES_BORDER.includes(id) ? 'none' : '';
+      if(fillCard) fillCard.style.display = '';
+      if(emptyCard) emptyCard.style.display = STYLE_HIDES_EMPTY.includes(id) ? 'none' : '';
+      if(bgCard) bgCard.style.display = '';
+      if(pctDisplayRow) pctDisplayRow.style.display = STYLE_HIDES_PCT.includes(id) ? 'none' : '';
+      if(logoCard) logoCard.style.display = STYLE_HIDES_LOGO.includes(id) ? 'none' : '';
+      updatePreview();
+      goToPage('generateur');
+    });
+  });
+}
+
+// --- BARRES ENREGISTRÉES (localStorage — config uniquement, pas les images uploadées) ---
+const SAVED_LIMIT = 10;
+function getSavedBars(){ try{ return JSON.parse(localStorage.getItem('pbg_saved_bars')||'[]'); }catch(e){ return []; } }
+function setSavedBars(arr){ try{ localStorage.setItem('pbg_saved_bars', JSON.stringify(arr)); }catch(e){} }
+
+g('saveBarBtn').addEventListener('click', async ()=>{
+  const saved = getSavedBars();
+  if(saved.length >= SAVED_LIMIT){
+    alert(`La version gratuite est limitée à ${SAVED_LIMIT} barres enregistrées. Passez en Pro pour en enregistrer davantage.`);
+    return;
+  }
+  const name = prompt('Nom de cette barre :', titleInp.value || 'Ma barre');
+  if(!name) return;
+  const bar = {
+    id: Date.now().toString(36),
+    name, date: new Date().toLocaleDateString('fr-FR'),
+    style: currentStyle, title: titleInp.value, txtColor: txtColor.value,
+    pct: pctSlider.value, bgCol: bgCol.value, emptyColor,
+    fC1: fC1.value, fC2: fC2.value, fillGrad, fillDir,
+    bC1: bC1.value, bC2: bC2.value, borderGrad, borderDir,
+    showPct, bgTransparent
+  };
+  if(currentSession){
+    const [logoUrl, fillImageUrl, borderImageUrl, emptyImageUrl, bgImageUrl] = await Promise.all([
+      uploadImageIfAny(imgLogo, 'logo'),
+      uploadImageIfAny(imgFill, 'fill'),
+      uploadImageIfAny(imgBorder, 'border'),
+      uploadImageIfAny(imgEmpty, 'empty'),
+      uploadImageIfAny(imgBg, 'bg'),
+    ]);
+    if(logoUrl) bar.logoUrl = logoUrl;
+    if(fillImageUrl) bar.fillImageUrl = fillImageUrl;
+    if(borderImageUrl) bar.borderImageUrl = borderImageUrl;
+    if(emptyImageUrl) bar.emptyImageUrl = emptyImageUrl;
+    if(bgImageUrl) bar.bgImageUrl = bgImageUrl;
+  }
+  saved.push(bar);
+  setSavedBars(saved);
+  alert(currentSession
+    ? 'Barre enregistrée ✓ (images incluses, conservées d\'une session à l\'autre)'
+    : 'Barre enregistrée ✓ (connectez-vous pour que les images soient aussi conservées d\'une session à l\'autre)');
+});
+
+// Les images uploadées ne sont pas sauvegardées avec une barre (voir commentaire plus haut).
+// Comme pour les couleurs, chaque style garde ses propres images en mémoire le temps de la
+// session (pas de persistance), pour qu'un changement de style n'affecte pas les autres styles.
+let styleImagesMap = {};
+function currentUIImages(){
+  return {
+    logo: imgLogo ? { img: imgLogo, name: g('logoName').textContent } : null,
+    fill: imgFill ? { img: imgFill, name: g('fillName').textContent } : null,
+    border: imgBorder ? { img: imgBorder, name: g('borderName').textContent } : null,
+    empty: imgEmpty ? { img: imgEmpty, name: g('emptyName').textContent } : null,
+    bg: imgBg ? { img: imgBg, name: g('bgFileName').textContent } : null,
+  };
+}
+function applyImagesToUI(imgs){
+  imgs = imgs || {};
+  const setSlot = (varSetter, entry, fileInp, nameEl, delBtn, ctrlEl, emptyLabel) => {
+    varSetter(entry ? entry.img : null);
+    fileInp.value = '';
+    nameEl.textContent = entry ? entry.name : emptyLabel;
+    delBtn.style.display = entry ? 'inline-block' : 'none';
+    if(ctrlEl) ctrlEl.style.opacity = entry ? '.3' : '1';
+  };
+  setSlot(v=>imgLogo=v, imgs.logo, g('logoFile'), g('logoName'), g('delLogo'), null, 'Aucun logo');
+  setSlot(v=>imgFill=v, imgs.fill, g('fillFile'), g('fillName'), g('delFill'), g('fillColorCtrl'), 'Aucune image');
+  setSlot(v=>imgBorder=v, imgs.border, g('borderFile'), g('borderName'), g('delBorder'), g('borderColorCtrl'), 'Aucune image');
+  setSlot(v=>imgEmpty=v, imgs.empty, g('emptyFile'), g('emptyName'), g('delEmpty'), g('emptyColorRow'), 'Aucune image');
+  setSlot(v=>imgBg=v, imgs.bg, g('bgFile'), g('bgFileName'), g('delBg'), null, 'Aucune image');
+}
+function resetUploadedImages(){ applyImagesToUI(null); }
+
+async function loadSavedBar(cfg){
+  styleImagesMap[currentStyle] = currentUIImages();
+  resetUploadedImages();
+  styleImagesMap[cfg.style] = null;
+  styleColorsMap[currentStyle] = currentUIColors();
+  currentStyle = cfg.style; titleInp.value = cfg.title; txtColor.value = cfg.txtColor;
+  pctSlider.value = cfg.pct; pctBox.value = cfg.pct; updatePctSliderFill();
+  bgCol.value = cfg.bgCol; emptyColor = cfg.emptyColor;
+  fC1.value = cfg.fC1; fC2.value = cfg.fC2; fillGrad = cfg.fillGrad; fillDir = cfg.fillDir;
+  bC1.value = cfg.bC1; bC2.value = cfg.bC2; borderGrad = cfg.borderGrad; borderDir = cfg.borderDir;
+  showPct = cfg.showPct !== undefined ? cfg.showPct : true;
+  g('showPctTog').classList.toggle('on', showPct);
+  bgTransparent = cfg.bgTransparent !== undefined ? cfg.bgTransparent : false;
+  g('bgTransparentChip').classList.toggle('on', bgTransparent);
+  g('bgColorCtrl').style.opacity = bgTransparent ? '.3' : '1';
+  g('bgCol').disabled = bgTransparent;
+  fTog.classList.toggle('on', fillGrad); fC2Box.style.opacity = fillGrad?'1':'.3'; fC2Text.style.opacity = fillGrad?'1':'.3'; fArrow.style.opacity = fillGrad?'1':'.3';
+  bTog.classList.toggle('on', borderGrad); bC2Box.style.opacity = borderGrad?'1':'.3'; bC2Text.style.opacity = borderGrad?'1':'.3'; bArrow.style.opacity = borderGrad?'1':'.3';
+  g('fDirs').querySelectorAll('.gradient-btn').forEach(b=>{b.disabled=!fillGrad; b.classList.toggle('active', b.dataset.d===fillDir);});
+  g('bDirs').querySelectorAll('.gradient-btn').forEach(b=>{b.disabled=!borderGrad; b.classList.toggle('active', b.dataset.d===borderDir);});
+  g('fC1Box').style.backgroundColor=cfg.fC1; g('fC1Text').value=cfg.fC1; fC2Box.style.backgroundColor=cfg.fC2; fC2Text.value=cfg.fC2;
+  g('bC1Box').style.backgroundColor=cfg.bC1; g('bC1Text').value=cfg.bC1; bC2Box.style.backgroundColor=cfg.bC2; bC2Text.value=cfg.bC2;
+  g('bgColorBox').style.backgroundColor=cfg.bgCol; g('bgColorText').value=cfg.bgCol;
+  g('eCustomCol').value=cfg.emptyColor; g('eColorBox').style.backgroundColor=cfg.emptyColor; g('eColorText').value=cfg.emptyColor;
+  document.querySelectorAll('.zone-chip').forEach(b=>b.classList.toggle('on', b.dataset.v===cfg.emptyColor));
+  const borderCard = g('borderCard'), emptyCard = g('emptyCard'), pctDisplayRow = g('pctDisplayRow'), logoCard = g('logoCard'), titleRow = g('titleRow');
+  if(titleRow) titleRow.style.display = STYLE_HIDES_TITLE.includes(cfg.style) ? 'none' : '';
+  if(borderCard) borderCard.style.display = STYLE_HIDES_BORDER.includes(cfg.style) ? 'none' : '';
+  if(emptyCard) emptyCard.style.display = STYLE_HIDES_EMPTY.includes(cfg.style) ? 'none' : '';
+  if(pctDisplayRow) pctDisplayRow.style.display = STYLE_HIDES_PCT.includes(cfg.style) ? 'none' : '';
+  if(logoCard) logoCard.style.display = STYLE_HIDES_LOGO.includes(cfg.style) ? 'none' : '';
+  styleColorsMap[cfg.style] = currentUIColors();
+  if(cfg.logoUrl || cfg.fillImageUrl || cfg.borderImageUrl || cfg.emptyImageUrl || cfg.bgImageUrl){
+    const [logo, fill, border, empty, bg] = await Promise.all([
+      loadImageFromUrl(cfg.logoUrl), loadImageFromUrl(cfg.fillImageUrl),
+      loadImageFromUrl(cfg.borderImageUrl), loadImageFromUrl(cfg.emptyImageUrl),
+      loadImageFromUrl(cfg.bgImageUrl),
+    ]);
+    applyImagesToUI({
+      logo: logo ? { img: logo, name: 'Image chargée' } : null,
+      fill: fill ? { img: fill, name: 'Image chargée' } : null,
+      border: border ? { img: border, name: 'Image chargée' } : null,
+      empty: empty ? { img: empty, name: 'Image chargée' } : null,
+      bg: bg ? { img: bg, name: 'Image chargée' } : null,
+    });
+    styleImagesMap[cfg.style] = currentUIImages();
+  }
+  updatePreview();
+  goToPage('generateur');
+}
+
+async function renderSavedBars(){
+  const saved = getSavedBars();
+  g('savedQuota').textContent = `${saved.length} / ${SAVED_LIMIT} barres enregistrées (version gratuite)`;
+  const grid = g('savedGrid');
+  grid.innerHTML = '';
+  if(saved.length===0){
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="e">💾</div><div class="t">Aucune barre enregistrée</div><div class="d">Configurez une barre dans le Générateur puis cliquez sur "Enregistrer cette barre" pour la retrouver ici.</div></div>`;
+    return;
+  }
+  for(const cfg of saved){
+    const card = document.createElement('div');
+    card.className = 'saved-card';
+    const thumb = document.createElement('canvas');
+    card.appendChild(thumb);
+    const nameDiv = document.createElement('div'); nameDiv.className='name'; nameDiv.textContent=cfg.name;
+    const metaDiv = document.createElement('div'); metaDiv.className='meta'; metaDiv.textContent=`${STYLE_LABELS[cfg.style]||cfg.style} · ${cfg.date}`;
+    const actions = document.createElement('div'); actions.className='actions';
+    const loadBtn = document.createElement('button'); loadBtn.textContent='Charger';
+    loadBtn.addEventListener('click', ()=>loadSavedBar(cfg));
+    const delBtn = document.createElement('button'); delBtn.textContent='Supprimer'; delBtn.className='danger';
+    delBtn.addEventListener('click', ()=>{ setSavedBars(getSavedBars().filter(s=>s.id!==cfg.id)); renderSavedBars(); });
+    actions.appendChild(loadBtn); actions.appendChild(delBtn);
+    card.appendChild(nameDiv); card.appendChild(metaDiv); card.appendChild(actions);
+    grid.appendChild(card);
+
+    // Miniature : chaque barre enregistrée garde ses propres couleurs, dégradés ET
+    // images, isolés des autres cartes et de l'état courant du générateur — même
+    // logique que l'aperçu des styles (buildStyleGrid), étendue au chargement
+    // asynchrone des images (URLs Supabase Storage) puisqu'une barre enregistrée
+    // n'a pas d'objet Image déjà en mémoire comme un style fraîchement édité.
+    const s=2; const thumbH=styleCanvasH(cfg.style); thumb.width=W*s; thumb.height=thumbH*s;
+    const ctx=thumb.getContext('2d'); ctx.scale(s,s); ctx.clearRect(0,0,W,thumbH);
+
+    const liveColors = currentUIColors();
+    const liveImages = currentUIImages();
+    const liveTitle = titleInp.value, livePct = pctSlider.value, liveTxtColor = txtColor.value;
+    const liveShowPct = showPct;
+
+    applyColorsToUI({
+      fill:cfg.fC1, border:cfg.bC1, bg:cfg.bgCol, empty:cfg.emptyColor,
+      fill2:cfg.fC2, fillGrad:cfg.fillGrad, fillDir:cfg.fillDir,
+      border2:cfg.bC2, borderGrad:cfg.borderGrad, borderDir:cfg.borderDir,
+      bgTransparent: cfg.bgTransparent !== undefined ? cfg.bgTransparent : false,
+    });
+    titleInp.value = cfg.title; pctSlider.value = cfg.pct; txtColor.value = cfg.txtColor;
+    showPct = cfg.showPct !== undefined ? cfg.showPct : true;
+
+    if(cfg.logoUrl || cfg.fillImageUrl || cfg.borderImageUrl || cfg.emptyImageUrl || cfg.bgImageUrl){
+      const [logo, fill, border, empty, bg] = await Promise.all([
+        loadImageFromUrl(cfg.logoUrl), loadImageFromUrl(cfg.fillImageUrl),
+        loadImageFromUrl(cfg.borderImageUrl), loadImageFromUrl(cfg.emptyImageUrl),
+        loadImageFromUrl(cfg.bgImageUrl),
+      ]);
+      applyImagesToUI({
+        logo: logo ? { img: logo, name: 'Image chargée' } : null,
+        fill: fill ? { img: fill, name: 'Image chargée' } : null,
+        border: border ? { img: border, name: 'Image chargée' } : null,
+        empty: empty ? { img: empty, name: 'Image chargée' } : null,
+        bg: bg ? { img: bg, name: 'Image chargée' } : null,
+      });
+    } else {
+      applyImagesToUI(null);
+    }
+
+    STYLES[cfg.style](ctx, {});
+
+    // Restauration intégrale de l'état courant du générateur — aucun effet de
+    // bord sur la barre en cours d'édition ni sur les cartes suivantes.
+    applyColorsToUI(liveColors);
+    applyImagesToUI(liveImages);
+    titleInp.value = liveTitle; pctSlider.value = livePct; txtColor.value = liveTxtColor;
+    showPct = liveShowPct;
+  }
+}
+
+// --- PARAMÈTRES ---
+g('resetFavBtn').addEventListener('click', ()=>{
+  if(confirm('Effacer tous vos favoris ?')){ setFavorites([]); alert('Favoris effacés.'); }
+});
+g('resetSavedBtn').addEventListener('click', ()=>{
+  if(confirm('Supprimer toutes vos barres enregistrées ? Cette action est irréversible.')){ setSavedBars([]); alert('Barres enregistrées supprimées.'); }
+});
+
+// --- ABONNEMENT (simulation locale, en attendant un vrai système de paiement) ---
+const PLANS = [
+  {
+    id:'free', name:'Free', price:'0', tagline:'Pour découvrir PBG et générer quelques barres.',
+    features:['10 barres enregistrées', 'Téléchargement PNG standard', 'Limite de 30 téléchargements']
+  },
+  {
+    id:'creatif', name:'Créatif', price:'2.50', annualPrice:'1.50', annualTotal:'18', tagline:'Pour les créatifs qui veulent juste de beaux rendus.',
+    features:['Téléchargements illimités', 'Export HD', 'Barres enregistrées illimitées', '15 styles de barres supplémentaire']
+  },
+  {
+    id:'pro', name:'Pro', price:'5', annualPrice:'3.90', annualTotal:'46.80', tagline:'Pour automatiser vos barres directement sur X.',
+    features:['Tout Créatif inclus', 'Automatisation X (Twitter)', 'Publication programmée', 'Support prioritaire']
+  }
+];
+let billingCycle = 'monthly';
+
+// Le cron d'automatisation tourne toutes les 15 minutes (Render Cron Job) :
+// inutile de calculer une fréquence de republication plus fine, elle ne
+// pourrait de toute façon jamais se déclencher plus souvent que ça.
+const CRON_MIN_HOURS = 0.25; // 15 minutes
+// Nombre de publications réparties entre 0% et 100% en mode "date" — la
+// fréquence de republication s'en déduit automatiquement (~1 publication par
+// point de pourcentage sur toute la durée du compte à rebours).
+const AUTO_FREQ_STEPS = 100;
+
+// Convertit une valeur <input type="datetime-local"> (heure locale du
+// navigateur, ex: "2027-01-01T00:30") en Date, pour calcul de durée.
+function computeAutoFrequenceHeures(startVal, endVal, steps = AUTO_FREQ_STEPS){
+  if(!startVal || !endVal) return null;
+  const start = new Date(startVal);
+  const end = new Date(endVal);
+  if(isNaN(start.getTime()) || isNaN(end.getTime())) return null;
+  const totalMs = end - start;
+  if(totalMs <= 0) return null;
+  const rawHours = (totalMs / steps) / 3600000;
+  return Math.max(CRON_MIN_HOURS, rawHours);
+}
+
+// Formate une fréquence en heures (flottant) en texte lisible "X j Y h Z min".
+function formatFrequenceLabel(hours){
+  if(!isFinite(hours) || hours <= 0) return '';
+  const totalMinutes = Math.round(hours * 60);
+  const days = Math.floor(totalMinutes / 1440);
+  const hh = Math.floor((totalMinutes % 1440) / 60);
+  const mm = totalMinutes % 60;
+  const parts = [];
+  if(days) parts.push(`${days} j`);
+  if(hh) parts.push(`${hh} h`);
+  if(mm || parts.length === 0) parts.push(`${mm} min`);
+  return parts.join(' ');
+}
+
+// Convertit une valeur stockée (timestamp ISO Supabase) vers le format attendu
+// par <input type="datetime-local"> en heure locale du navigateur, pour
+// réafficher les dates existantes lors du recalibrage d'une automatisation.
+function toDatetimeLocalValue(value){
+  if(!value) return '';
+  const d = new Date(value);
+  if(isNaN(d.getTime())) return '';
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+async function renderAutomation(){
+  const el = g('automationBody');
+  if(getPlan()==='pro'){
+    if(!currentSession){
+      el.innerHTML = `
+        <div class="empty-state" style="max-width:480px;margin:0;text-align:left;">
+          <div class="e">✉️</div>
+          <div class="t">Connectez-vous</div>
+          <div class="d">Entrez votre email pour recevoir un lien de connexion (aucun mot de passe nécessaire).</div>
+          <input class="txt-inp" type="email" id="authEmailInp" placeholder="vous@exemple.com" style="margin-top:12px;">
+          <button class="plan-btn primary" id="sendMagicLinkBtn" style="width:auto;margin-top:12px;padding:10px 20px;">Recevoir le lien</button>
+          <div id="authMsg" style="margin-top:10px;font-size:13px;opacity:.8;"></div>
+        </div>`;
+      g('sendMagicLinkBtn').addEventListener('click', async ()=>{
+        const email = g('authEmailInp').value.trim();
+        const msg = g('authMsg');
+        if(!email){ msg.textContent = 'Entrez un email valide.'; return; }
+        msg.textContent = 'Envoi en cours...';
+        const error = await sendMagicLink(email);
+        if(error) console.error('signInWithOtp error:', error);
+        msg.textContent = error ? `Erreur : ${error.message}` : `Lien envoyé à ${email} — vérifiez votre boîte mail.`;
+      });
+      return;
+    }
+
+    const accounts = await fetchXAccounts();
+    const automations = accounts.length ? await fetchAutomations() : [];
+
+    const styleOptions = Object.entries(STYLE_LABELS)
+      .map(([id, label]) => `<option value="${id}">${label}</option>`).join('');
+    const accountOptions = accounts.map(a => `<option value="${a.id}">@${a.x_username}</option>`).join('');
+
+    const automationsListHtml = automations.length === 0
+      ? `<div class="d">Aucune automatisation créée pour le moment.</div>`
+      : automations.map(a => `
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08);">
+            <div>
+              <strong>${a.nom_evenement}</strong>
+              <div style="font-size:12px;opacity:.7;">${STYLE_LABELS[a.style]||a.style} · @${a.x_accounts?.x_username||'?'} · ${a.actif ? 'active' : 'en pause'} · toutes les ${formatFrequenceLabel(a.frequence_heures) || '—'}</div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="edit-auto-btn" data-id="${a.id}" style="background:none;border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:6px 10px;cursor:pointer;color:inherit;">Modifier</button>
+              <button class="toggle-auto-btn" data-id="${a.id}" data-actif="${a.actif}" style="background:none;border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:6px 10px;cursor:pointer;color:inherit;">${a.actif ? 'Mettre en pause' : 'Activer'}</button>
+              <button class="delete-auto-btn" data-id="${a.id}" style="background:none;border:1px solid rgba(255,80,80,.4);border-radius:6px;padding:6px 10px;cursor:pointer;color:#ff8080;">Supprimer</button>
+            </div>
+          </div>`).join('');
+
+    el.innerHTML = `
+      <div class="empty-state" style="max-width:560px;margin:0;text-align:left;">
+        <div class="e">🤖</div>
+        <div class="t">Comptes X connectés</div>
+        ${accounts.length === 0
+          ? `<div class="d">Aucun compte connecté pour le moment.</div>`
+          : `<div class="d">${accounts.map(a => `@${a.x_username}`).join(', ')}</div>`
+        }
+        <button class="plan-btn primary" id="connectXBtn" style="width:auto;margin-top:16px;padding:10px 20px;">Connecter mon compte X</button>
+        <div style="margin-top:16px;">
+          <button id="signOutBtn" style="background:none;border:none;text-decoration:underline;cursor:pointer;opacity:.7;font-size:13px;">Se déconnecter</button>
+        </div>
+      </div>
+
+      ${accounts.length > 0 ? `
+      <div class="empty-state" style="max-width:560px;margin:24px 0 0;text-align:left;">
+        <div class="t">Vos automatisations</div>
+        <div style="margin-top:8px;">${automationsListHtml}</div>
+      </div>
+
+      <div class="empty-state" style="max-width:560px;margin:24px 0 0;text-align:left;">
+        <div class="t">Créer une automatisation</div>
+        <div class="d" style="margin-bottom:12px;">Limite de 2 automatisations actives par compte X connecté.</div>
+
+        <label style="font-size:13px;opacity:.8;">Charger depuis une barre enregistrée (optionnel)</label>
+        <select class="txt-inp" id="autoLoadSavedSel" style="margin:4px 0 12px;">
+          <option value="">— Choisir une barre —</option>
+          ${getSavedBars().map(b => `<option value="${b.id}">${b.name}</option>`).join('')}
+        </select>
+
+        <label style="font-size:13px;opacity:.8;">Compte X</label>
+        <select class="txt-inp" id="autoAccountSel" style="margin:4px 0 12px;">${accountOptions}</select>
+
+        <label style="font-size:13px;opacity:.8;">Style de barre</label>
+        <select class="txt-inp" id="autoStyleSel" style="margin:4px 0 12px;">${styleOptions}</select>
+
+        <label style="font-size:13px;opacity:.8;">Couleur de remplissage</label>
+        <input type="color" id="autoColorInp" value="#facc15" style="display:block;margin:4px 0 12px;width:60px;height:36px;border:none;background:none;cursor:pointer;">
+
+        <label style="font-size:13px;opacity:.8;">Nom de l'événement (affiché dans le texte)</label>
+        <input class="txt-inp" id="autoNomInp" placeholder="Ex: Super Bowl" style="margin:4px 0 12px;">
+
+        <div style="display:flex;gap:16px;margin-bottom:12px;">
+          <label style="font-size:13px;"><input type="radio" name="autoMode" value="date" checked> Compte à rebours (date)</label>
+          <label style="font-size:13px;"><input type="radio" name="autoMode" value="valeur"> Objectif (valeur/objectif)</label>
+        </div>
+
+        <div id="autoModeDate" style="display:flex;gap:12px;margin-bottom:6px;">
+          <div style="flex:1;">
+            <label style="font-size:13px;opacity:.8;">Date et heure de début</label>
+            <input class="txt-inp" type="datetime-local" id="autoDateDebut" style="margin-top:4px;">
+          </div>
+          <div style="flex:1;">
+            <label style="font-size:13px;opacity:.8;">Date et heure de fin</label>
+            <input class="txt-inp" type="datetime-local" id="autoDateFin" style="margin-top:4px;">
+          </div>
+        </div>
+        <div id="autoModeValeur" style="display:none;gap:12px;margin-bottom:12px;">
+          <div style="flex:1;">
+            <label style="font-size:13px;opacity:.8;">Valeur actuelle</label>
+            <input class="txt-inp" type="number" id="autoValeurActuelle" style="margin-top:4px;">
+          </div>
+          <div style="flex:1;">
+            <label style="font-size:13px;opacity:.8;">Objectif</label>
+            <input class="txt-inp" type="number" id="autoObjectif" style="margin-top:4px;">
+          </div>
+        </div>
+
+        <label style="font-size:13px;opacity:.8;">Logo (optionnel — sera inclus dans les posts automatiques)</label>
+        <input class="txt-inp" type="file" id="autoLogoFile" accept="image/*" style="margin:4px 0 12px;">
+
+        <label style="font-size:13px;opacity:.8;">Image de remplissage (optionnel)</label>
+        <input class="txt-inp" type="file" id="autoFillFile" accept="image/*" style="margin:4px 0 12px;">
+
+        <label style="font-size:13px;opacity:.8;">Image de contour (optionnel)</label>
+        <input class="txt-inp" type="file" id="autoBorderFile" accept="image/*" style="margin:4px 0 12px;">
+
+        <label style="font-size:13px;opacity:.8;">Image de zone vide (optionnel)</label>
+        <input class="txt-inp" type="file" id="autoEmptyFile" accept="image/*" style="margin:4px 0 12px;">
+
+        <label style="font-size:13px;opacity:.8;">Image de fond (optionnel)</label>
+        <input class="txt-inp" type="file" id="autoBgFile" accept="image/*" style="margin:4px 0 12px;">
+
+        <label style="font-size:13px;opacity:.8;">Texte du post</label>
+        <div style="position:relative;display:inline-block;margin:4px 0 6px;">
+          <button type="button" class="plan-btn" id="autoAddVarBtn" style="width:auto;padding:4px 10px;font-size:12px;">+ Ajouter une variable</button>
+          <div id="autoAddVarMenu" style="display:none;position:absolute;top:100%;left:0;z-index:20;background:#1a1a2e;border:1px solid #333;border-radius:8px;padding:4px;min-width:170px;box-shadow:0 4px 12px rgba(0,0,0,.4);">
+            <div class="var-menu-item" data-var="nom_evenement" data-label="Nom de l'événement" style="padding:6px 10px;cursor:pointer;border-radius:4px;font-size:13px;">Nom de l'événement</div>
+            <div class="var-menu-item" data-var="jours_restants" data-label="Jours restants" style="padding:6px 10px;cursor:pointer;border-radius:4px;font-size:13px;">Jours restants</div>
+            <div class="var-menu-item" data-var="pourcentage" data-label="Pourcentage" style="padding:6px 10px;cursor:pointer;border-radius:4px;font-size:13px;">Pourcentage</div>
+          </div>
+        </div>
+        <div class="txt-inp" id="autoTemplateInp" contenteditable="true" style="margin:4px 0 12px;width:100%;min-height:44px;padding:8px;white-space:pre-wrap;line-height:1.6;"></div>
+
+        <div id="autoFrequenceManual" style="margin-bottom:16px;">
+          <label style="font-size:13px;opacity:.8;">Republier toutes les</label>
+          <div style="display:flex;gap:6px;align-items:center;margin-top:4px;">
+            <input class="txt-inp" type="number" min="0" id="autoFrequenceHeuresInp" value="24" style="width:70px;">
+            <span style="font-size:13px;opacity:.7;">h</span>
+            <input class="txt-inp" type="number" min="0" max="59" id="autoFrequenceMinutesInp" value="0" style="width:70px;">
+            <span style="font-size:13px;opacity:.7;">min</span>
+          </div>
+        </div>
+        <div id="autoFrequenceAuto" style="display:none;font-size:13px;opacity:.75;margin-bottom:16px;line-height:1.5;"></div>
+
+        <button class="plan-btn primary" id="createAutoBtn" style="width:auto;padding:10px 20px;">Créer l'automatisation</button>
+        <button class="plan-btn" id="cancelEditAutoBtn" style="display:none;width:auto;padding:10px 20px;margin-left:8px;">Annuler</button>
+        <div id="autoMsg" style="margin-top:10px;font-size:13px;opacity:.8;"></div>
+      </div>
+      ` : ''}
+    `;
+
+    g('connectXBtn').addEventListener('click', connectXAccount);
+    g('signOutBtn').addEventListener('click', async ()=>{ await signOutUser(); renderAutomation(); });
+
+    document.querySelectorAll('.toggle-auto-btn').forEach(btn => {
+      btn.addEventListener('click', async ()=>{
+        await toggleAutomationActive(btn.dataset.id, btn.dataset.actif !== 'true');
+        renderAutomation();
+      });
+    });
+    document.querySelectorAll('.delete-auto-btn').forEach(btn => {
+      btn.addEventListener('click', async ()=>{
+        if(!confirm('Supprimer cette automatisation ?')) return;
+        await deleteAutomation(btn.dataset.id);
+        renderAutomation();
+      });
+    });
+
+    if(accounts.length > 0){
+      let selectedAutoBarConfig = null;
+      let editingAutomationId = null;
+
+      function chipLabelFor(varName){
+        return { nom_evenement: "Nom de l'événement", jours_restants: 'Jours restants', pourcentage: 'Pourcentage' }[varName] || varName;
+      }
+      // Reconstruit le HTML à jetons de l'éditeur "Texte du post" à partir du
+      // template texte brut stocké en base (ex: "{nom_evenement} : ...").
+      function templateTextToEditorHTML(text){
+        if(!text) return '';
+        return text.replace(/\{(\w+)\}/g, (m, key) => chipHTML(key, chipLabelFor(key)));
+      }
+
+      // Recalibrage : pré-remplit le formulaire avec les valeurs actuelles de
+      // l'automatisation choisie, au lieu de repartir d'un formulaire vide.
+      function populateFormForEdit(a){
+        editingAutomationId = a.id;
+        selectedAutoBarConfig = null;
+        g('autoLoadSavedSel').value = '';
+        g('autoAccountSel').value = a.x_account_id;
+        g('autoStyleSel').value = a.style;
+        g('autoColorInp').value = a.fill_color_1 || '#facc15';
+        g('autoNomInp').value = a.nom_evenement || '';
+        document.querySelector(`input[name="autoMode"][value="${a.mode}"]`).checked = true;
+        const isDate = a.mode === 'date';
+        g('autoModeDate').style.display = isDate ? 'flex' : 'none';
+        g('autoModeValeur').style.display = isDate ? 'none' : 'flex';
+        if(isDate){
+          g('autoDateDebut').value = toDatetimeLocalValue(a.date_debut);
+          g('autoDateFin').value = toDatetimeLocalValue(a.date_fin);
+        } else {
+          g('autoValeurActuelle').value = a.valeur_actuelle ?? '';
+          g('autoObjectif').value = a.objectif ?? '';
+        }
+        const totalMin = Math.round((a.frequence_heures || 0) * 60);
+        g('autoFrequenceHeuresInp').value = Math.floor(totalMin / 60);
+        g('autoFrequenceMinutesInp').value = totalMin % 60;
+        autoTemplateEditor.innerHTML = templateTextToEditorHTML(a.template_texte) || autoTemplateEditor.innerHTML;
+        updateAutoFrequenceDisplay();
+        g('createAutoBtn').textContent = 'Enregistrer les modifications';
+        g('cancelEditAutoBtn').style.display = 'inline-block';
+        g('autoMsg').textContent = "Recalibrage de l'automatisation « " + (a.nom_evenement || '') + " » — modifiez les champs puis enregistrez.";
+        g('autoAccountSel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+
+      document.querySelectorAll('.edit-auto-btn').forEach(btn => {
+        btn.addEventListener('click', ()=>{
+          const a = automations.find(x => x.id === btn.dataset.id);
+          if(a) populateFormForEdit(a);
+        });
+      });
+
+      g('cancelEditAutoBtn').addEventListener('click', ()=>{ renderAutomation(); });
+
+      // --- Éditeur "Texte du post" à jetons de variable ---
+      // Chaque variable ({nom_evenement}, {jours_restants}, {pourcentage}) est
+      // insérée comme un jeton (span contenteditable="false") plutôt que comme
+      // du texte brut : impossible à casser accidentellement en tapant dedans,
+      // et supprimable uniquement via son bouton "×" dédié (voir le keydown
+      // ci-dessous, qui bloque Backspace/Delete juste à côté d'un jeton).
+      function chipHTML(varName, varLabel){
+        return `<span class="var-chip" contenteditable="false" data-var="${varName}" title="${varLabel}" style="display:inline-flex;align-items:center;gap:4px;background:#2d6cdf22;color:#5b9dff;border:1px solid #3a7bd5;border-radius:12px;padding:1px 6px 1px 8px;font-size:12px;margin:0 2px;user-select:none;white-space:nowrap;">{${varName}}<span class="var-chip-x" style="cursor:pointer;font-weight:bold;padding:0 2px;">×</span></span>`;
+      }
+      const autoTemplateEditor = g('autoTemplateInp');
+      if(autoTemplateEditor && !autoTemplateEditor.innerHTML.trim()){
+        autoTemplateEditor.innerHTML = `${chipHTML('nom_evenement',"Nom de l'événement")} : plus que ${chipHTML('jours_restants','Jours restants')} jours ! La barre est à ${chipHTML('pourcentage','Pourcentage')}%`;
+      }
+      function insertVarChipAtEnd(varName, varLabel){
+        autoTemplateEditor.insertAdjacentHTML('beforeend', chipHTML(varName, varLabel));
+        autoTemplateEditor.focus();
+        const range = document.createRange();
+        range.selectNodeContents(autoTemplateEditor);
+        range.collapse(false);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+      function getTemplateText(){
+        let out = '';
+        autoTemplateEditor.childNodes.forEach(node=>{
+          if(node.nodeType === Node.TEXT_NODE){ out += node.textContent; }
+          else if(node.classList && node.classList.contains('var-chip')){ out += `{${node.dataset.var}}`; }
+          else { out += node.textContent || ''; }
+        });
+        return out;
+      }
+      // Suppression d'un jeton : uniquement via son bouton "×" (délégation, couvre
+      // aussi les jetons ajoutés après coup par insertVarChipAtEnd).
+      autoTemplateEditor.addEventListener('click', (e)=>{
+        if(e.target.classList && e.target.classList.contains('var-chip-x')){
+          e.target.closest('.var-chip')?.remove();
+        }
+      });
+      // Empêche Backspace/Delete de "manger" un jeton entier quand le curseur est
+      // juste à côté — limitation connue : une sélection à la souris qui englobe
+      // un jeton peut toujours le supprimer avec le texte autour.
+      autoTemplateEditor.addEventListener('keydown', (e)=>{
+        if(e.key !== 'Backspace' && e.key !== 'Delete') return;
+        const sel = window.getSelection();
+        if(!sel.rangeCount) return;
+        const range = sel.getRangeAt(0);
+        if(!range.collapsed) return;
+        let node = range.startContainer, offset = range.startOffset;
+        while(node.parentNode !== autoTemplateEditor && node !== autoTemplateEditor) node = node.parentNode;
+        const children = Array.from(autoTemplateEditor.childNodes);
+        const idx = children.indexOf(node);
+        if(e.key === 'Backspace'){
+          const atStart = (node.nodeType === Node.TEXT_NODE && offset === 0) || node === autoTemplateEditor;
+          const prev = idx > 0 ? children[idx-1] : null;
+          if(atStart && prev && prev.classList && prev.classList.contains('var-chip')) e.preventDefault();
+        } else {
+          const atEnd = (node.nodeType === Node.TEXT_NODE && offset === node.textContent.length) || node === autoTemplateEditor;
+          const next = idx < children.length-1 ? children[idx+1] : null;
+          if(atEnd && next && next.classList && next.classList.contains('var-chip')) e.preventDefault();
+        }
+      });
+      // Menu "+ Ajouter une variable"
+      const autoAddVarMenu = g('autoAddVarMenu');
+      g('autoAddVarBtn').addEventListener('click', (e)=>{
+        e.stopPropagation();
+        autoAddVarMenu.style.display = autoAddVarMenu.style.display === 'none' ? 'block' : 'none';
+      });
+      autoAddVarMenu.querySelectorAll('.var-menu-item').forEach(item=>{
+        item.addEventListener('click', ()=>{
+          insertVarChipAtEnd(item.dataset.var, item.dataset.label);
+          autoAddVarMenu.style.display = 'none';
+        });
+        item.addEventListener('mouseenter', ()=>{ item.style.background = '#2d6cdf33'; });
+        item.addEventListener('mouseleave', ()=>{ item.style.background = ''; });
+      });
+      document.addEventListener('click', ()=>{ autoAddVarMenu.style.display = 'none'; });
+
+      g('autoLoadSavedSel').addEventListener('change', ()=>{
+        const id = g('autoLoadSavedSel').value;
+        if(!id){ selectedAutoBarConfig = null; return; }
+        const bar = getSavedBars().find(b => b.id === id);
+        if(!bar) return;
+        selectedAutoBarConfig = bar;
+        g('autoStyleSel').value = bar.style;
+        g('autoColorInp').value = bar.fC1;
+        if(!g('autoNomInp').value.trim()) g('autoNomInp').value = bar.name;
+      });
+
+      function updateAutoFrequenceDisplay(){
+        const isDate = document.querySelector('input[name="autoMode"]:checked').value === 'date';
+        g('autoFrequenceManual').style.display = isDate ? 'none' : 'block';
+        g('autoFrequenceAuto').style.display = isDate ? 'block' : 'none';
+        if(!isDate) return;
+        const h = computeAutoFrequenceHeures(g('autoDateDebut').value, g('autoDateFin').value);
+        g('autoFrequenceAuto').textContent = h
+          ? `Publication automatique toutes les ${formatFrequenceLabel(h)} environ (${AUTO_FREQ_STEPS} publications réparties de 0% à 100%, calculé automatiquement à partir des dates ci-dessus).`
+          : 'Renseignez la date/heure de début et de fin (fin après début) pour calculer la fréquence automatiquement.';
+      }
+
+      document.querySelectorAll('input[name="autoMode"]').forEach(radio => {
+        radio.addEventListener('change', ()=>{
+          const isDate = document.querySelector('input[name="autoMode"]:checked').value === 'date';
+          g('autoModeDate').style.display = isDate ? 'flex' : 'none';
+          g('autoModeValeur').style.display = isDate ? 'none' : 'flex';
+          updateAutoFrequenceDisplay();
+        });
+      });
+      ['autoDateDebut','autoDateFin'].forEach(id => g(id).addEventListener('input', updateAutoFrequenceDisplay));
+      updateAutoFrequenceDisplay();
+
+      g('createAutoBtn').addEventListener('click', async ()=>{
+        const msg = g('autoMsg');
+        const mode = document.querySelector('input[name="autoMode"]:checked').value;
+        const nom = g('autoNomInp').value.trim();
+        if(!nom){ msg.textContent = "Entrez un nom d'événement."; return; }
+
+        // Fréquence : calculée automatiquement à partir de l'intervalle exact
+        // en mode "date" (heures/minutes incluses), sinon saisie manuelle h+min.
+        let frequenceHeures, startISO = null, endISO = null;
+        if(mode === 'date'){
+          const startVal = g('autoDateDebut').value, endVal = g('autoDateFin').value;
+          if(!startVal || !endVal){ msg.textContent = "Renseignez la date et l'heure de début et de fin."; return; }
+          // Converti en instant absolu (UTC) avant stockage, pour que le calcul
+          // reste correct côté serveur quel que soit son fuseau horaire.
+          startISO = new Date(startVal).toISOString();
+          endISO = new Date(endVal).toISOString();
+          frequenceHeures = computeAutoFrequenceHeures(startVal, endVal);
+          if(!frequenceHeures){ msg.textContent = 'La date/heure de fin doit être après la date/heure de début.'; return; }
+        } else {
+          const h = parseInt(g('autoFrequenceHeuresInp').value, 10) || 0;
+          const m = parseInt(g('autoFrequenceMinutesInp').value, 10) || 0;
+          frequenceHeures = h + m / 60;
+          if(frequenceHeures <= 0){ msg.textContent = 'Renseignez une fréquence de republication supérieure à 0.'; return; }
+        }
+
+        const payload = {
+          x_account_id: g('autoAccountSel').value,
+          style: g('autoStyleSel').value,
+          fill_color_1: g('autoColorInp').value,
+          mode,
+          nom_evenement: nom,
+          template_texte: getTemplateText(),
+          frequence_heures: frequenceHeures,
+        };
+        // En recalibrage, on repart de la personnalisation déjà en base pour
+        // cette automatisation (sinon un simple recalibrage de dates/fréquence
+        // effacerait les couleurs/dégradés déjà configurés).
+        if(editingAutomationId){
+          const current = automations.find(x => x.id === editingAutomationId);
+          if(current){
+            Object.assign(payload, {
+              fill_color_2: current.fill_color_2, fill_grad: current.fill_grad, fill_dir: current.fill_dir,
+              border_color_1: current.border_color_1, border_color_2: current.border_color_2,
+              border_grad: current.border_grad, border_dir: current.border_dir,
+              bg_color: current.bg_color, empty_color: current.empty_color, text_color: current.text_color,
+            });
+          }
+        }
+        // Personnalisation complète reprise de la barre enregistrée sélectionnée, si choisie —
+        // prioritaire sur les valeurs de recalibrage ci-dessus.
+        if(selectedAutoBarConfig){
+          const b = selectedAutoBarConfig;
+          Object.assign(payload, {
+            fill_color_2: b.fC2, fill_grad: !!b.fillGrad, fill_dir: b.fillDir,
+            border_color_1: b.bC1, border_color_2: b.bC2, border_grad: !!b.borderGrad, border_dir: b.borderDir,
+            bg_color: b.bgCol, empty_color: b.emptyColor, text_color: b.txtColor,
+          });
+          if(b.logoUrl) payload.logo_url = b.logoUrl;
+          if(b.fillImageUrl) payload.fill_image_url = b.fillImageUrl;
+          if(b.borderImageUrl) payload.border_image_url = b.borderImageUrl;
+          if(b.emptyImageUrl) payload.empty_image_url = b.emptyImageUrl;
+          if(b.bgImageUrl) payload.bg_image_url = b.bgImageUrl;
+        }
+        if(mode === 'date'){
+          payload.date_debut = startISO;
+          payload.date_fin = endISO;
+        } else {
+          payload.valeur_actuelle = parseFloat(g('autoValeurActuelle').value);
+          payload.objectif = parseFloat(g('autoObjectif').value);
+          if(isNaN(payload.valeur_actuelle) || isNaN(payload.objectif)){ msg.textContent = 'Renseignez valeur actuelle et objectif.'; return; }
+        }
+
+        msg.textContent = editingAutomationId ? 'Mise à jour...' : 'Création...';
+        const imageFields = [
+          ['autoLogoFile', 'automation-logo', 'logo_url'],
+          ['autoFillFile', 'automation-fill', 'fill_image_url'],
+          ['autoBorderFile', 'automation-border', 'border_image_url'],
+          ['autoEmptyFile', 'automation-empty', 'empty_image_url'],
+          ['autoBgFile', 'automation-bg', 'bg_image_url'],
+        ];
+        const filesToUpload = imageFields.filter(([inputId]) => g(inputId).files[0]);
+        if(filesToUpload.length){
+          msg.textContent = 'Upload des images...';
+          const uploads = await Promise.all(
+            filesToUpload.map(([inputId, slot]) => uploadFileToStorage(g(inputId).files[0], slot))
+          );
+          filesToUpload.forEach(([, , field], i) => { if(uploads[i]) payload[field] = uploads[i]; });
+          msg.textContent = editingAutomationId ? 'Mise à jour...' : 'Création...';
+        }
+        // Les images non ré-uploadées ne sont pas incluses dans payload : en
+        // mise à jour, update() ne touche pas aux colonnes absentes, donc les
+        // images déjà en place restent inchangées automatiquement.
+        const error = editingAutomationId
+          ? await updateAutomation(editingAutomationId, payload)
+          : await createAutomation(payload);
+        if(error){ msg.textContent = `Erreur : ${error.message}`; return; }
+        editingAutomationId = null;
+        renderAutomation();
+      });
+    }
+  } else {
+    el.innerHTML = `
+      <div class="empty-state" style="max-width:480px;margin:0;text-align:left;">
+        <div class="e">👑</div>
+        <div class="t">Fonctionnalité Pro</div>
+        <div class="d">L'automatisation (connexion X et publication programmée de vos barres) est réservée au plan Pro ($5/mois). Passez au plan Pro pour la débloquer dès sa sortie.</div>
+        <button class="plan-btn primary" id="automationUpsellBtn" style="width:auto;margin-top:16px;padding:10px 20px;">Voir le plan Pro</button>
+      </div>`;
+    g('automationUpsellBtn').addEventListener('click', ()=>goToPage('abonnement'));
+  }
+}
+
+function renderAbonnement(){
+  const grid = g('planGrid');
+  const current = getPlan();
+  const cancelled = isPlanCancelled();
+  const nextBilling = getNextBillingDate();
+  grid.innerHTML = '';
+
+  // Bannière de résiliation en cours
+  let banner = g('cancelBanner');
+  if(banner) banner.remove();
+  if(current!=='free' && cancelled && nextBilling){
+    banner = document.createElement('div');
+    banner.id = 'cancelBanner';
+    banner.style.cssText = 'max-width:900px;margin-bottom:16px;padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius-sm);font-size:13px;color:var(--label);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;';
+    banner.innerHTML = `<span>Abonnement résilié — vous conservez les avantages <strong style="color:var(--text)">${current==='pro'?'Pro':'Créatif'}</strong> jusqu'au <strong style="color:var(--text)">${nextBilling.toLocaleDateString('fr-FR')}</strong>, puis vous repasserez automatiquement en Free.</span><button class="plan-btn" id="reactivateBtn" style="width:auto;flex-shrink:0;">Réactiver</button>`;
+    g('planGrid').before(banner);
+    g('reactivateBtn').addEventListener('click', ()=>{
+      reactivateSubscription();
+      renderNav(g('sidebarNav')); renderNav(g('drawerNav'));
+      renderAbonnement();
+    });
+  }
+
+  PLANS.forEach(plan=>{
+    const isCurrent = plan.id===current;
+    const showRecommended = plan.id==='creatif' && current==='free';
+    const card = document.createElement('div');
+    card.className = 'plan-card' + (isCurrent?' current':'') + (showRecommended ? ' highlight':'');
+    let btnLabel, btnDisabled=false;
+    if(isCurrent){
+      if(plan.id==='free'){ btnLabel='Plan actuel'; btnDisabled=true; }
+      else if(cancelled){ btnLabel='Résiliation en cours'; btnDisabled=true; }
+      else { btnLabel='Résilier mon abonnement'; }
+    } else {
+      btnLabel = plan.id==='free' ? 'Repasser en Free' : 'Choisir ce plan';
+    }
+    const hasAnnual = !!plan.annualPrice;
+    const showAnnual = billingCycle === 'annual' && hasAnnual;
+    const displayPrice = showAnnual ? plan.annualPrice : plan.price;
+    let priceNote = '';
+    if(showAnnual){
+      priceNote = `<div class="plan-price-note">Facturé $${plan.annualTotal}/an</div>`;
+    } else if(billingCycle === 'annual' && plan.price !== '0' && !hasAnnual){
+      priceNote = `<div class="plan-price-note">Pas de forfait annuel — facturé mensuellement</div>`;
+    }
+    card.innerHTML = `
+      ${showRecommended ? `<div class="plan-recommended-badge"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Recommandé</div>` : ''}
+      <div class="plan-name-row">
+        <span class="plan-name">${plan.name}</span>
+        ${isCurrent?'<span class="plan-badge">Plan actuel</span>':''}
+      </div>
+      <div class="plan-price-wrapper">
+        <div class="plan-price">$${displayPrice}<span>/mois</span></div>
+        ${priceNote}
+      </div>
+      <div class="plan-tagline">${plan.tagline}</div>
+      <button class="plan-btn" ${btnDisabled?'disabled':''}>${btnLabel}</button>
+      <ul class="plan-features">
+        ${plan.features.map(f=>`<li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg><span>${f}</span></li>`).join('')}
+      </ul>
+    `;
+    card.querySelector('.plan-btn').addEventListener('click', ()=>{
+      if(isCurrent && plan.id!=='free' && !cancelled){
+        // Résiliation : les avantages restent actifs jusqu'à la prochaine date de facturation
+        if(confirm(`Résilier votre abonnement ${plan.name} ? Vous garderez vos avantages jusqu'à la fin de la période déjà payée, puis vous repasserez en Free automatiquement.`)){
+          cancelSubscription();
+          renderNav(g('sidebarNav')); renderNav(g('drawerNav'));
+          renderAbonnement();
+        }
+        return;
+      }
+      if(isCurrent) return;
+      setPlan(plan.id);
+      renderNav(g('sidebarNav')); renderNav(g('drawerNav'));
+      renderAbonnement();
+      if(plan.id==='pro') alert('Plan Pro activé (simulation locale) — l\'onglet Automatisation est maintenant visible dans le menu.');
+    });
+    grid.appendChild(card);
+  });
+}
+
+g('billingToggle').addEventListener('click', (e)=>{
+  const btn = e.target.closest('.billing-opt');
+  if(!btn) return;
+  billingCycle = btn.dataset.cycle;
+  g('billingToggle').querySelectorAll('.billing-opt').forEach(el=>{
+    el.classList.toggle('active', el.dataset.cycle === billingCycle);
+  });
+  renderAbonnement();
+});
+
+// État initial de la ligne "Afficher le pourcentage" (dépend du style de départ)
+(function(){ const r=g('pctDisplayRow'); if(r) r.style.display = STYLE_HIDES_PCT.includes(currentStyle) ? 'none' : ''; })();
+(function(){ const r=g('logoCard'); if(r) r.style.display = STYLE_HIDES_LOGO.includes(currentStyle) ? 'none' : ''; })();
+(function(){ const r=g('titleRow'); if(r) r.style.display = STYLE_HIDES_TITLE.includes(currentStyle) ? 'none' : ''; })();
+
+// Charger la police et init
+if(document.fonts && document.fonts.load){
+  document.fonts.load(`900 ${fontSize}px 'Montserrat'`).then(()=>{
+    updatePreview();
+  }).catch(updatePreview);
+} else {
+  updatePreview();
+}
+</script>
+</body>
+</html>
