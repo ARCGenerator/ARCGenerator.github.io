@@ -3154,6 +3154,7 @@ async function renderAutomation(){
     if(accounts.length > 0){
       let selectedAutoBarConfig = null;
       let editingAutomationId = null;
+      let editingOriginalDates = null; // { debut, fin } — évite de retoucher les dates au recalibrage si l'utilisateur n'y a pas touché
 
       function chipLabelFor(varName){
         return { nom_evenement: "Nom de l'événement", jours_restants: 'Jours restants', pourcentage: 'Pourcentage' }[varName] || varName;
@@ -3182,9 +3183,11 @@ async function renderAutomation(){
         if(isDate){
           g('autoDateDebut').value = toDatetimeLocalValue(a.date_debut);
           g('autoDateFin').value = toDatetimeLocalValue(a.date_fin);
+          editingOriginalDates = { debut: a.date_debut, fin: a.date_fin };
         } else {
           g('autoValeurActuelle').value = a.valeur_actuelle ?? '';
           g('autoObjectif').value = a.objectif ?? '';
+          editingOriginalDates = null;
         }
         const totalMin = Math.round((a.frequence_heures || 0) * 60);
         g('autoFrequenceHeuresInp').value = Math.floor(totalMin / 60);
@@ -3204,7 +3207,7 @@ async function renderAutomation(){
         });
       });
 
-      g('cancelEditAutoBtn').addEventListener('click', ()=>{ renderAutomation(); });
+      g('cancelEditAutoBtn').addEventListener('click', ()=>{ editingOriginalDates = null; renderAutomation(); });
 
       // --- Éditeur "Texte du post" à jetons de variable ---
       // Chaque variable ({nom_evenement}, {jours_restants}, {pourcentage}) est
@@ -3333,6 +3336,14 @@ async function renderAutomation(){
           // reste correct côté serveur quel que soit son fuseau horaire.
           startISO = new Date(startVal).toISOString();
           endISO = new Date(endVal).toISOString();
+          // Recalibrage : si le champ affiché n'a pas changé par rapport à la
+          // valeur d'origine, on réutilise l'ISO stocké tel quel — évite tout
+          // risque de dérive d'une minute/heure à l'aller-retour affichage <-> stockage
+          // quand l'utilisateur ne voulait modifier que le texte, par exemple.
+          if(editingAutomationId && editingOriginalDates){
+            if(toDatetimeLocalValue(editingOriginalDates.debut) === startVal) startISO = editingOriginalDates.debut;
+            if(toDatetimeLocalValue(editingOriginalDates.fin) === endVal) endISO = editingOriginalDates.fin;
+          }
           frequenceHeures = computeAutoFrequenceHeures(startVal, endVal);
           if(!frequenceHeures){ msg.textContent = 'La date/heure de fin doit être après la date/heure de début.'; return; }
         } else {
@@ -3414,6 +3425,7 @@ async function renderAutomation(){
           : await createAutomation(payload);
         if(error){ msg.textContent = `Erreur : ${error.message}`; return; }
         editingAutomationId = null;
+        editingOriginalDates = null;
         renderAutomation();
       });
     }
