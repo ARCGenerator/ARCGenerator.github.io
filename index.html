@@ -98,7 +98,11 @@ body {
   transition: background .15s;
 }
 .hamburger:hover { background: var(--border); }
-.brand-badge { font-weight: 700; font-size: 20px; letter-spacing: .05em; color: var(--text); }
+.brand-badge { display: flex; align-items: center; }
+.brand-logo { height: 22px; width: auto; display: block; }
+.brand-logo-light { display: none; }
+body.theme-light .brand-logo-dark { display: none; }
+body.theme-light .brand-logo-light { display: block; }
 .brand-sep { width: 1px; height: 16px; background: var(--border); }
 .brand-name { font-size: 14px; font-weight: 400; color: var(--label); }
 .theme-toggle { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--label); cursor: pointer; user-select: none; }
@@ -204,7 +208,8 @@ body:not(.theme-light) .sidebar-pro .pro-card { background: #000000; }
 /* Barres enregistrées */
 .saved-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
 .saved-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
-.saved-card canvas { width: 100%; height: auto; border-radius: 6px; background: #000; }
+.saved-thumb-wrap { background: #000000; border-radius: 6px; padding: 4px; }
+.saved-card canvas { display: block; width: 100%; height: auto; border-radius: 4px; background: #000; }
 .saved-card .name { font-size: 13px; font-weight: 700; }
 .saved-card .meta { font-size: 10.5px; color: var(--muted); }
 .saved-card .actions { display: flex; gap: 8px; }
@@ -214,6 +219,7 @@ body:not(.theme-light) .sidebar-pro .pro-card { background: #000000; }
   border: 1px solid var(--border); background: var(--surface2); color: var(--text); transition: background .15s;
 }
 .saved-card .actions button.danger { color: #e0554a; border-color: #4a2c28; }
+.saved-card .actions button.icon-btn { flex: 0 0 34px; display: flex; align-items: center; justify-content: center; padding: 0; }
 .saved-card .actions button:hover { background: var(--border); }
 .empty-state { text-align: center; padding: 60px 20px; color: var(--label); }
 .empty-state .e { font-size: 34px; margin-bottom: 10px; }
@@ -761,7 +767,72 @@ input[type=color] { width: 34px; height: 34px; border: 1px solid var(--border); 
 <header class="header">
   <div class="header-left">
     <button class="hamburger" id="hamburgerBtn">☰</button>
-    <span class="brand-badge">PBG</span>
+    <span class="brand-badge">
+      <svg class="brand-logo brand-logo-dark" viewBox="225 333 1128 333" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+        <g transform="translate(307.000000,579.000000)">
+          <svg width="958.683413" height="7.582749" viewBox="0 0 958.683413 7.582749" overflow="visible">
+            <g transform="translate(-7.933689,16.671606) scale(0.100000,-0.100000)" fill="#f2f2f0" stroke="none">
+              <path d="M950 158 c-556 -11 -888 -23 -870 -30 8 -3 191 -12 405 -19 526 -17&#10;7358 -26 8050 -9 259 6 618 13 798 17 180 3 330 10 333 15 3 4 -30 8 -73 8&#10;-43 0 -172 3 -288 6 -115 3 -376 9 -580 13 -507 11 -7285 10 -7775 -1z"/>
+            </g>
+          </svg>
+        </g>
+        <g transform="translate(305.000000,413.000000)">
+          <svg width="969.000000" height="126.847310" viewBox="0 0 969.000000 126.847310" overflow="visible">
+            <g transform="translate(-5.000000,132.084334) scale(0.100000,-0.100000)" fill="#f2f2f0" stroke="none">
+              <path d="M56 1313 c-3 -4 -6 -221 -6 -484 l0 -479 23 -5 c12 -3 45 -4 72 -2&#10;l50 5 3 175 2 175 168 4 c158 3 170 5 217 30 116 60 171 161 163 297 -8 126&#10;-72 218 -184 262 -55 21 -76 23 -280 25 -122 2 -225 0 -228 -3z m471 -159 c15&#10;-11 39 -36 51 -55 20 -29 23 -44 20 -99 -2 -47 -10 -74 -26 -96 -38 -54 -73&#10;-64 -231 -64 l-141 0 0 171 0 171 149 -4 c133 -3 153 -5 178 -24z"/>
+<path d="M7417 1218 c-8 -152 -9 -695 -1 -793 l7 -84 286 2 286 2 3 67 3 68&#10;-220 0 -221 0 -2 418 -3 417 -66 3 -66 3 -6 -103z"/>
+<path d="M8133 1305 c-58 -25 -65 -111 -11 -149 35 -25 76 -20 109 13 70 70&#10;-6 175 -98 136z"/>
+<path d="M5312 1303 c-17 -6 -42 -57 -42 -83 0 -33 53 -80 89 -80 38 0 79 36&#10;87 76 9 46 -35 94 -84 93 -21 0 -43 -3 -50 -6z"/>
+<path d="M1583 1029 c-109 -21 -203 -92 -250 -188 -25 -50 -28 -67 -28 -156 0&#10;-89 3 -106 28 -157 72 -147 238 -225 395 -184 74 19 124 49 175 105 62 69 80&#10;121 81 231 1 84 -2 102 -28 157 -31 68 -89 129 -154 162 -32 16 -151 44 -172&#10;40 -3 -1 -24 -5 -47 -10z m112 -130 c142 -39 200 -220 112 -350 -114 -169&#10;-367 -76 -367 136 0 96 55 182 135 210 49 17 69 18 120 4z"/>
+<path d="M9375 1030 c-102 -14 -189 -79 -237 -178 -31 -63 -33 -73 -33 -172 0&#10;-95 3 -111 28 -162 67 -136 220 -209 373 -178 71 15 105 31 163 78 l44 36 -48&#10;43 -49 43 -26 -25 c-58 -56 -168 -72 -247 -36 -46 21 -89 77 -99 129 l-6 32&#10;251 0 251 0 0 48 c0 26 -7 75 -15 107 -44 168 -178 258 -350 235z m132 -141&#10;c29 -14 52 -35 68 -63 45 -78 49 -76 -155 -76 -118 0 -180 4 -180 10 0 18 37&#10;84 57 102 54 49 141 60 210 27z"/>
+<path d="M1110 1019 c-14 -6 -44 -29 -67 -52 l-43 -41 0 47 0 47 -65 0 -65 0&#10;-1 -122 c0 -68 -2 -220 -2 -338 l-2 -215 68 -3 c37 -2 67 -2 68 0 0 2 2 100 5&#10;218 5 197 7 218 27 254 32 57 78 81 155 80 l62 0 0 68 0 68 -57 -1 c-32 0 -69&#10;-5 -83 -10z"/>
+<path d="M2284 1014 c-128 -45 -213 -193 -201 -350 13 -179 144 -308 312 -308&#10;80 1 124 16 178 64 l37 32 2 -28 c5 -88 -8 -140 -49 -184 -40 -45 -81 -60&#10;-163 -60 -61 0 -141 32 -174 69 -27 29 -36 26 -74 -23 -36 -48 -35 -63 6 -93&#10;90 -66 204 -94 313 -75 125 22 206 79 253 181 20 44 21 64 24 414 l3 367 -66&#10;0 -65 0 0 -47 0 -47 -32 31 c-52 50 -112 73 -193 72 -38 0 -89 -7 -111 -15z&#10;m240 -138 c62 -36 91 -94 91 -181 0 -86 -31 -148 -92 -182 -186 -105 -375 89&#10;-277 285 52 105 174 139 278 78z"/>
+<path d="M3138 1010 c-20 -11 -48 -34 -62 -52 l-26 -33 0 48 0 47 -70 0 -70 0&#10;0 -334 0 -334 33 -5 c17 -2 48 -4 67 -2 l35 2 5 214 c5 201 6 216 28 255 34&#10;59 73 78 155 77 l68 0 -3 66 -3 66 -60 2 c-44 2 -70 -3 -97 -17z"/>
+<path d="M3533 1000 c-117 -59 -176 -157 -181 -305 -5 -124 19 -189 97 -266&#10;73 -71 133 -94 246 -93 92 0 162 27 228 85 l38 34 -44 44 -45 43 -39 -31 c-65&#10;-52 -157 -66 -230 -36 -50 21 -72 42 -94 90 -37 79 -50 75 232 75 l252 0 -5&#10;73 c-7 95 -39 176 -91 229 -62 64 -106 82 -212 86 -84 3 -94 1 -152 -28z m224&#10;-111 c29 -14 52 -35 68 -63 45 -78 49 -76 -155 -76 -118 0 -180 4 -180 10 0&#10;18 37 84 57 102 54 49 141 60 210 27z"/>
+<path d="M4205 1008 c-22 -11 -48 -28 -59 -37 -31 -27 -56 -88 -56 -135 0&#10;-106 47 -152 204 -201 125 -39 149 -57 144 -106 -9 -89 -149 -103 -252 -24&#10;l-45 34 -42 -46 -43 -46 35 -30 c64 -55 135 -81 224 -81 93 -1 143 14 192 57&#10;69 60 89 145 54 222 -28 63 -71 92 -188 127 -148 46 -185 87 -127 145 23 23&#10;31 25 89 21 46 -3 73 -11 102 -30 l40 -27 42 43 43 43 -38 31 c-53 44 -114 62&#10;-203 62 -57 -1 -86 -6 -116 -22z"/>
+<path d="M4795 1007 c-85 -41 -115 -88 -115 -180 0 -99 51 -146 216 -196 113&#10;-34 137 -53 132 -102 -9 -89 -148 -103 -250 -26 l-43 33 -20 -20 c-11 -11 -28&#10;-31 -39 -44 -18 -23 -18 -24 10 -53 16 -16 53 -42 83 -56 46 -23 68 -27 140&#10;-28 75 0 94 4 144 28 71 35 108 86 115 156 11 116 -42 173 -212 226 -117 36&#10;-146 56 -146 98 0 10 11 29 25 42 20 21 34 25 83 25 47 0 67 -6 104 -29 l46&#10;-29 42 43 41 42 -32 27 c-57 49 -89 60 -184 63 -79 4 -96 1 -140 -20z"/>
+<path d="M5754 1001 c-79 -37 -129 -88 -167 -170 -27 -58 -31 -77 -31 -151 0&#10;-70 4 -95 26 -141 35 -77 88 -132 159 -168 188 -94 406 -9 480 187 27 74 24&#10;203 -8 274 -31 68 -98 136 -168 169 -51 25 -72 29 -145 29 -73 0 -94 -4 -146&#10;-29z m199 -102 c89 -24 147 -110 147 -215 0 -133 -81 -219 -207 -219 -52 0&#10;-68 5 -105 30 -89 62 -120 195 -69 297 24 51 62 83 120 104 45 16 66 17 114 3z"/>
+<path d="M6605 1013 c-16 -8 -47 -31 -67 -51 l-38 -36 0 47 0 47 -65 0 -65 0&#10;2 -337 3 -338 63 -1 62 -2 2 67 c1 36 2 136 3 221 1 170 7 195 64 243 76 64&#10;196 35 230 -56 7 -17 11 -116 11 -246 l0 -218 49 -6 c27 -3 58 -3 71 0 l21 6&#10;-3 251 c-3 215 -6 257 -22 291 -23 51 -61 92 -108 116 -47 24 -169 26 -213 2z"/>
+<path d="M8633 1009 c-24 -11 -54 -34 -68 -51 l-25 -30 0 46 0 46 -70 0 -70 0&#10;0 -334 0 -335 55 -6 c90 -12 85 -24 85 217 0 188 3 218 20 255 44 98 194 121&#10;254 40 20 -27 21 -45 26 -270 l5 -242 68 -1 68 0 -3 261 c-3 257 -3 261 -29&#10;310 -15 30 -42 62 -68 80 -38 26 -52 30 -124 33 -68 2 -89 -1 -124 -19z"/>
+<path d="M5290 686 l0 -334 66 -4 c36 -1 68 -1 70 1 2 2 4 154 4 338 l0 333&#10;-70 0 -70 0 0 -334z"/>
+<path d="M8100 685 l0 -335 28 -2 c29 -1 54 -1 90 1 l22 1 0 335 0 335 -70 0&#10;-70 0 0 -335z"/>
+            </g>
+          </svg>
+        </g>
+      </svg>
+      <svg class="brand-logo brand-logo-light" viewBox="225 333 1128 333" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+        <g transform="translate(307.000000,579.000000)">
+          <svg width="958.683413" height="7.582749" viewBox="0 0 958.683413 7.582749" overflow="visible">
+            <g transform="translate(-7.933689,16.671606) scale(0.100000,-0.100000)" fill="#000000" stroke="none">
+              <path d="M950 158 c-556 -11 -888 -23 -870 -30 8 -3 191 -12 405 -19 526 -17&#10;7358 -26 8050 -9 259 6 618 13 798 17 180 3 330 10 333 15 3 4 -30 8 -73 8&#10;-43 0 -172 3 -288 6 -115 3 -376 9 -580 13 -507 11 -7285 10 -7775 -1z"/>
+            </g>
+          </svg>
+        </g>
+        <g transform="translate(305.000000,413.000000)">
+          <svg width="969.000000" height="126.847310" viewBox="0 0 969.000000 126.847310" overflow="visible">
+            <g transform="translate(-5.000000,132.084334) scale(0.100000,-0.100000)" fill="#000000" stroke="none">
+              <path d="M56 1313 c-3 -4 -6 -221 -6 -484 l0 -479 23 -5 c12 -3 45 -4 72 -2&#10;l50 5 3 175 2 175 168 4 c158 3 170 5 217 30 116 60 171 161 163 297 -8 126&#10;-72 218 -184 262 -55 21 -76 23 -280 25 -122 2 -225 0 -228 -3z m471 -159 c15&#10;-11 39 -36 51 -55 20 -29 23 -44 20 -99 -2 -47 -10 -74 -26 -96 -38 -54 -73&#10;-64 -231 -64 l-141 0 0 171 0 171 149 -4 c133 -3 153 -5 178 -24z"/>
+<path d="M7417 1218 c-8 -152 -9 -695 -1 -793 l7 -84 286 2 286 2 3 67 3 68&#10;-220 0 -221 0 -2 418 -3 417 -66 3 -66 3 -6 -103z"/>
+<path d="M8133 1305 c-58 -25 -65 -111 -11 -149 35 -25 76 -20 109 13 70 70&#10;-6 175 -98 136z"/>
+<path d="M5312 1303 c-17 -6 -42 -57 -42 -83 0 -33 53 -80 89 -80 38 0 79 36&#10;87 76 9 46 -35 94 -84 93 -21 0 -43 -3 -50 -6z"/>
+<path d="M1583 1029 c-109 -21 -203 -92 -250 -188 -25 -50 -28 -67 -28 -156 0&#10;-89 3 -106 28 -157 72 -147 238 -225 395 -184 74 19 124 49 175 105 62 69 80&#10;121 81 231 1 84 -2 102 -28 157 -31 68 -89 129 -154 162 -32 16 -151 44 -172&#10;40 -3 -1 -24 -5 -47 -10z m112 -130 c142 -39 200 -220 112 -350 -114 -169&#10;-367 -76 -367 136 0 96 55 182 135 210 49 17 69 18 120 4z"/>
+<path d="M9375 1030 c-102 -14 -189 -79 -237 -178 -31 -63 -33 -73 -33 -172 0&#10;-95 3 -111 28 -162 67 -136 220 -209 373 -178 71 15 105 31 163 78 l44 36 -48&#10;43 -49 43 -26 -25 c-58 -56 -168 -72 -247 -36 -46 21 -89 77 -99 129 l-6 32&#10;251 0 251 0 0 48 c0 26 -7 75 -15 107 -44 168 -178 258 -350 235z m132 -141&#10;c29 -14 52 -35 68 -63 45 -78 49 -76 -155 -76 -118 0 -180 4 -180 10 0 18 37&#10;84 57 102 54 49 141 60 210 27z"/>
+<path d="M1110 1019 c-14 -6 -44 -29 -67 -52 l-43 -41 0 47 0 47 -65 0 -65 0&#10;-1 -122 c0 -68 -2 -220 -2 -338 l-2 -215 68 -3 c37 -2 67 -2 68 0 0 2 2 100 5&#10;218 5 197 7 218 27 254 32 57 78 81 155 80 l62 0 0 68 0 68 -57 -1 c-32 0 -69&#10;-5 -83 -10z"/>
+<path d="M2284 1014 c-128 -45 -213 -193 -201 -350 13 -179 144 -308 312 -308&#10;80 1 124 16 178 64 l37 32 2 -28 c5 -88 -8 -140 -49 -184 -40 -45 -81 -60&#10;-163 -60 -61 0 -141 32 -174 69 -27 29 -36 26 -74 -23 -36 -48 -35 -63 6 -93&#10;90 -66 204 -94 313 -75 125 22 206 79 253 181 20 44 21 64 24 414 l3 367 -66&#10;0 -65 0 0 -47 0 -47 -32 31 c-52 50 -112 73 -193 72 -38 0 -89 -7 -111 -15z&#10;m240 -138 c62 -36 91 -94 91 -181 0 -86 -31 -148 -92 -182 -186 -105 -375 89&#10;-277 285 52 105 174 139 278 78z"/>
+<path d="M3138 1010 c-20 -11 -48 -34 -62 -52 l-26 -33 0 48 0 47 -70 0 -70 0&#10;0 -334 0 -334 33 -5 c17 -2 48 -4 67 -2 l35 2 5 214 c5 201 6 216 28 255 34&#10;59 73 78 155 77 l68 0 -3 66 -3 66 -60 2 c-44 2 -70 -3 -97 -17z"/>
+<path d="M3533 1000 c-117 -59 -176 -157 -181 -305 -5 -124 19 -189 97 -266&#10;73 -71 133 -94 246 -93 92 0 162 27 228 85 l38 34 -44 44 -45 43 -39 -31 c-65&#10;-52 -157 -66 -230 -36 -50 21 -72 42 -94 90 -37 79 -50 75 232 75 l252 0 -5&#10;73 c-7 95 -39 176 -91 229 -62 64 -106 82 -212 86 -84 3 -94 1 -152 -28z m224&#10;-111 c29 -14 52 -35 68 -63 45 -78 49 -76 -155 -76 -118 0 -180 4 -180 10 0&#10;18 37 84 57 102 54 49 141 60 210 27z"/>
+<path d="M4205 1008 c-22 -11 -48 -28 -59 -37 -31 -27 -56 -88 -56 -135 0&#10;-106 47 -152 204 -201 125 -39 149 -57 144 -106 -9 -89 -149 -103 -252 -24&#10;l-45 34 -42 -46 -43 -46 35 -30 c64 -55 135 -81 224 -81 93 -1 143 14 192 57&#10;69 60 89 145 54 222 -28 63 -71 92 -188 127 -148 46 -185 87 -127 145 23 23&#10;31 25 89 21 46 -3 73 -11 102 -30 l40 -27 42 43 43 43 -38 31 c-53 44 -114 62&#10;-203 62 -57 -1 -86 -6 -116 -22z"/>
+<path d="M4795 1007 c-85 -41 -115 -88 -115 -180 0 -99 51 -146 216 -196 113&#10;-34 137 -53 132 -102 -9 -89 -148 -103 -250 -26 l-43 33 -20 -20 c-11 -11 -28&#10;-31 -39 -44 -18 -23 -18 -24 10 -53 16 -16 53 -42 83 -56 46 -23 68 -27 140&#10;-28 75 0 94 4 144 28 71 35 108 86 115 156 11 116 -42 173 -212 226 -117 36&#10;-146 56 -146 98 0 10 11 29 25 42 20 21 34 25 83 25 47 0 67 -6 104 -29 l46&#10;-29 42 43 41 42 -32 27 c-57 49 -89 60 -184 63 -79 4 -96 1 -140 -20z"/>
+<path d="M5754 1001 c-79 -37 -129 -88 -167 -170 -27 -58 -31 -77 -31 -151 0&#10;-70 4 -95 26 -141 35 -77 88 -132 159 -168 188 -94 406 -9 480 187 27 74 24&#10;203 -8 274 -31 68 -98 136 -168 169 -51 25 -72 29 -145 29 -73 0 -94 -4 -146&#10;-29z m199 -102 c89 -24 147 -110 147 -215 0 -133 -81 -219 -207 -219 -52 0&#10;-68 5 -105 30 -89 62 -120 195 -69 297 24 51 62 83 120 104 45 16 66 17 114 3z"/>
+<path d="M6605 1013 c-16 -8 -47 -31 -67 -51 l-38 -36 0 47 0 47 -65 0 -65 0&#10;2 -337 3 -338 63 -1 62 -2 2 67 c1 36 2 136 3 221 1 170 7 195 64 243 76 64&#10;196 35 230 -56 7 -17 11 -116 11 -246 l0 -218 49 -6 c27 -3 58 -3 71 0 l21 6&#10;-3 251 c-3 215 -6 257 -22 291 -23 51 -61 92 -108 116 -47 24 -169 26 -213 2z"/>
+<path d="M8633 1009 c-24 -11 -54 -34 -68 -51 l-25 -30 0 46 0 46 -70 0 -70 0&#10;0 -334 0 -335 55 -6 c90 -12 85 -24 85 217 0 188 3 218 20 255 44 98 194 121&#10;254 40 20 -27 21 -45 26 -270 l5 -242 68 -1 68 0 -3 261 c-3 257 -3 261 -29&#10;310 -15 30 -42 62 -68 80 -38 26 -52 30 -124 33 -68 2 -89 -1 -124 -19z"/>
+<path d="M5290 686 l0 -334 66 -4 c36 -1 68 -1 70 1 2 2 4 154 4 338 l0 333&#10;-70 0 -70 0 0 -334z"/>
+<path d="M8100 685 l0 -335 28 -2 c29 -1 54 -1 90 1 l22 1 0 335 0 335 -70 0&#10;-70 0 0 -335z"/>
+            </g>
+          </svg>
+        </g>
+      </svg>
+    </span>
     <div class="brand-sep"></div>
     <span class="brand-name">Progress Bar Generator</span>
   </div>
@@ -1028,7 +1099,7 @@ input[type=color] { width: 34px; height: 34px; border: 1px solid var(--border); 
 
           <button class="btn-save" id="saveBarBtn">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
-            Enregistrer cette barre
+            <span id="saveBarBtnLabel">Enregistrer cette barre</span>
           </button>
           <button class="btn-download" id="dlBtn">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
@@ -2687,6 +2758,8 @@ function buildStyleGrid(gridEl, favoritesOnly){
       styleColorsMap[prevStyle] = currentUIColors();
       styleImagesMap[prevStyle] = currentUIImages();
       currentStyle = id;
+      loadedBarId = null;
+      updateSaveBarBtnLabel();
       applyColorsToUI(colorsFor(id));
       applyImagesToUI(styleImagesMap[id]);
       document.querySelectorAll('.style-card').forEach(c=>c.classList.remove('on'));
@@ -2710,16 +2783,27 @@ const SAVED_LIMIT = 10;
 function getSavedBars(){ try{ return JSON.parse(localStorage.getItem('pbg_saved_bars')||'[]'); }catch(e){ return []; } }
 function setSavedBars(arr){ try{ localStorage.setItem('pbg_saved_bars', JSON.stringify(arr)); }catch(e){} }
 
+let loadedBarId = null;
+function updateSaveBarBtnLabel(){
+  const lbl = g('saveBarBtnLabel');
+  if(lbl) lbl.textContent = loadedBarId ? 'Enregistrer les modifications' : 'Enregistrer cette barre';
+}
 g('saveBarBtn').addEventListener('click', async ()=>{
   const saved = getSavedBars();
-  if(saved.length >= SAVED_LIMIT){
+  const existingIndex = loadedBarId ? saved.findIndex(b=>b.id===loadedBarId) : -1;
+  if(existingIndex === -1 && saved.length >= SAVED_LIMIT){
     alert(`La version gratuite est limitée à ${SAVED_LIMIT} barres enregistrées. Passez en Pro pour en enregistrer davantage.`);
     return;
   }
-  const name = prompt('Nom de cette barre :', titleInp.value || 'Ma barre');
-  if(!name) return;
+  let name;
+  if(existingIndex !== -1){
+    name = saved[existingIndex].name;
+  } else {
+    name = prompt('Nom de cette barre :', titleInp.value || 'Ma barre');
+    if(!name) return;
+  }
   const bar = {
-    id: Date.now().toString(36),
+    id: existingIndex !== -1 ? loadedBarId : Date.now().toString(36),
     name, date: new Date().toLocaleDateString('fr-FR'),
     style: currentStyle, title: titleInp.value, txtColor: txtColor.value,
     pct: pctSlider.value, bgCol: bgCol.value, emptyColor,
@@ -2741,11 +2825,19 @@ g('saveBarBtn').addEventListener('click', async ()=>{
     if(emptyImageUrl) bar.emptyImageUrl = emptyImageUrl;
     if(bgImageUrl) bar.bgImageUrl = bgImageUrl;
   }
-  saved.push(bar);
+  if(existingIndex !== -1){
+    saved[existingIndex] = bar;
+  } else {
+    saved.push(bar);
+  }
   setSavedBars(saved);
-  alert(currentSession
-    ? 'Barre enregistrée ✓ (images incluses, conservées d\'une session à l\'autre)'
-    : 'Barre enregistrée ✓ (connectez-vous pour que les images soient aussi conservées d\'une session à l\'autre)');
+  loadedBarId = bar.id;
+  updateSaveBarBtnLabel();
+  alert(existingIndex !== -1
+    ? 'Modifications enregistrées ✓'
+    : (currentSession
+      ? 'Barre enregistrée ✓ (images incluses, conservées d\'une session à l\'autre)'
+      : 'Barre enregistrée ✓ (connectez-vous pour que les images soient aussi conservées d\'une session à l\'autre)'));
 });
 
 // Les images uploadées ne sont pas sauvegardées avec une barre (voir commentaire plus haut).
@@ -2779,6 +2871,8 @@ function applyImagesToUI(imgs){
 function resetUploadedImages(){ applyImagesToUI(null); }
 
 async function loadSavedBar(cfg){
+  loadedBarId = cfg.id;
+  updateSaveBarBtnLabel();
   styleImagesMap[currentStyle] = currentUIImages();
   resetUploadedImages();
   styleImagesMap[cfg.style] = null;
@@ -2841,16 +2935,33 @@ async function renderSavedBars(){
   for(const cfg of saved){
     const card = document.createElement('div');
     card.className = 'saved-card';
+    const thumbWrap = document.createElement('div'); thumbWrap.className = 'saved-thumb-wrap';
     const thumb = document.createElement('canvas');
-    card.appendChild(thumb);
+    thumbWrap.appendChild(thumb);
+    card.appendChild(thumbWrap);
     const nameDiv = document.createElement('div'); nameDiv.className='name'; nameDiv.textContent=cfg.name;
     const metaDiv = document.createElement('div'); metaDiv.className='meta'; metaDiv.textContent=`${STYLE_LABELS[cfg.style]||cfg.style} · ${cfg.date}`;
     const actions = document.createElement('div'); actions.className='actions';
+    const renameBtn = document.createElement('button');
+    renameBtn.className = 'icon-btn';
+    renameBtn.title = 'Renommer';
+    renameBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>';
+    renameBtn.addEventListener('click', ()=>{
+      const newName = prompt('Renommer cette barre :', cfg.name);
+      if(!newName) return;
+      const all = getSavedBars();
+      const idx = all.findIndex(b=>b.id===cfg.id);
+      if(idx!==-1){ all[idx].name = newName; setSavedBars(all); renderSavedBars(); }
+    });
     const loadBtn = document.createElement('button'); loadBtn.textContent='Charger';
     loadBtn.addEventListener('click', ()=>loadSavedBar(cfg));
     const delBtn = document.createElement('button'); delBtn.textContent='Supprimer'; delBtn.className='danger';
-    delBtn.addEventListener('click', ()=>{ setSavedBars(getSavedBars().filter(s=>s.id!==cfg.id)); renderSavedBars(); });
-    actions.appendChild(loadBtn); actions.appendChild(delBtn);
+    delBtn.addEventListener('click', ()=>{
+      setSavedBars(getSavedBars().filter(s=>s.id!==cfg.id));
+      if(loadedBarId === cfg.id){ loadedBarId = null; updateSaveBarBtnLabel(); }
+      renderSavedBars();
+    });
+    actions.appendChild(renameBtn); actions.appendChild(loadBtn); actions.appendChild(delBtn);
     card.appendChild(nameDiv); card.appendChild(metaDiv); card.appendChild(actions);
     grid.appendChild(card);
 
