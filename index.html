@@ -46,7 +46,6 @@ body.theme-light .zone-chip { border-color: var(--border); }
 body.theme-light .color-box { border-color: rgba(0,0,0,.1); }
 body.theme-light .toggle-switch-lg.on::after,
 body.theme-light .grad-switch.on::after { background: #fff; }
-body.theme-light .saved-card .actions button.danger,
 body.theme-light .settings-card .row-s button { border-color: #f0b8b0; }
 
 body {
@@ -99,7 +98,7 @@ body {
 }
 .hamburger:hover { background: var(--border); }
 .brand-badge { display: flex; align-items: center; }
-.brand-logo { height: 22px; width: auto; display: block; }
+.brand-logo { height: 36px; width: auto; display: block; }
 .brand-logo-light { display: none; }
 body.theme-light .brand-logo-dark { display: none; }
 body.theme-light .brand-logo-light { display: block; }
@@ -207,16 +206,15 @@ body:not(.theme-light) .sidebar-pro .pro-card { background: #000000; }
 
 /* Barres enregistrées */
 .saved-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
-.saved-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
-.saved-thumb-wrap { background: #000000; border-radius: 6px; padding: 4px; }
+.saved-card { background: #000000; border: 1px solid #2a2a2e; border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
 .saved-card canvas { display: block; width: 100%; height: auto; border-radius: 4px; background: #000; }
-.saved-card .name { font-size: 13px; font-weight: 700; }
-.saved-card .meta { font-size: 10.5px; color: var(--muted); }
+.saved-card .name { font-size: 13px; font-weight: 700; color: #f2f2f0; }
+.saved-card .meta { font-size: 10.5px; color: #9a9a9e; }
 .saved-card .actions { display: flex; gap: 8px; }
 .saved-card .actions button {
   flex: 1; padding: 7px; border-radius: 7px; font-size: 11px; font-weight: 700;
   cursor: pointer; font-family: var(--ui-font); text-transform: uppercase; letter-spacing: .03em;
-  border: 1px solid var(--border); background: var(--surface2); color: var(--text); transition: background .15s;
+  border: 1px solid #333336; background: #1a1a1c; color: #f2f2f0; transition: background .15s;
 }
 .saved-card .actions button.danger { color: #e0554a; border-color: #4a2c28; }
 .saved-card .actions button.icon-btn { flex: 0 0 34px; display: flex; align-items: center; justify-content: center; padding: 0; }
@@ -428,16 +426,16 @@ body.theme-light .plan-card { background: var(--surface); }
   gap: 12px;
 }
 .style-card {
-  background: transparent;
-  border: 1px solid var(--border);
+  background: #000000;
+  border: 1px solid #2a2a2e;
   border-radius: 6px;
   padding: 16px;
   cursor: pointer;
   display: flex; flex-direction: column; gap: 8px;
   transition: border-color .15s, background .15s;
 }
-.style-card:hover { background: var(--surface); }
-.style-card.on { border-color: var(--text); background: var(--surface); }
+.style-card:hover { background: #141416; }
+.style-card.on { border-color: #f2f2f0; background: #141416; }
 .style-card canvas {
   width: 100%; height: auto; display: block;
   border-radius: 4px; background: #000;
@@ -445,11 +443,11 @@ body.theme-light .plan-card { background: var(--surface); }
 }
 .style-card .name {
   font-size: 11px; font-weight: 600;
-  text-align: center; color: var(--label);
+  text-align: center; color: #9a9a9e;
 }
-.style-card.on .name { color: var(--text); }
+.style-card.on .name { color: #f2f2f0; }
 .style-card .desc {
-  font-size: 10px; text-align: center; color: var(--label); opacity: .75;
+  font-size: 10px; text-align: center; color: #9a9a9e; opacity: .75;
 }
 
 /* MAIN (éditeur) */
@@ -2935,10 +2933,8 @@ async function renderSavedBars(){
   for(const cfg of saved){
     const card = document.createElement('div');
     card.className = 'saved-card';
-    const thumbWrap = document.createElement('div'); thumbWrap.className = 'saved-thumb-wrap';
     const thumb = document.createElement('canvas');
-    thumbWrap.appendChild(thumb);
-    card.appendChild(thumbWrap);
+    card.appendChild(thumb);
     const nameDiv = document.createElement('div'); nameDiv.className='name'; nameDiv.textContent=cfg.name;
     const metaDiv = document.createElement('div'); metaDiv.className='meta'; metaDiv.textContent=`${STYLE_LABELS[cfg.style]||cfg.style} · ${cfg.date}`;
     const actions = document.createElement('div'); actions.className='actions';
