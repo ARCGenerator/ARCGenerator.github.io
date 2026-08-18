@@ -1258,6 +1258,7 @@ function buildAutomationRow(payload){
   if(payload.bg_color !== undefined) row.bg_color = payload.bg_color;
   if(payload.empty_color !== undefined) row.empty_color = payload.empty_color;
   if(payload.text_color !== undefined) row.text_color = payload.text_color;
+  if(payload.show_pct !== undefined) row.show_pct = payload.show_pct;
   return row;
 }
 
@@ -3373,6 +3374,7 @@ async function renderAutomation(){
               border_color_1: current.border_color_1, border_color_2: current.border_color_2,
               border_grad: current.border_grad, border_dir: current.border_dir,
               bg_color: current.bg_color, empty_color: current.empty_color, text_color: current.text_color,
+              show_pct: current.show_pct,
             });
           }
         }
@@ -3384,6 +3386,7 @@ async function renderAutomation(){
             fill_color_2: b.fC2, fill_grad: !!b.fillGrad, fill_dir: b.fillDir,
             border_color_1: b.bC1, border_color_2: b.bC2, border_grad: !!b.borderGrad, border_dir: b.borderDir,
             bg_color: b.bgCol, empty_color: b.emptyColor, text_color: b.txtColor,
+            show_pct: b.showPct !== undefined ? !!b.showPct : true,
           });
           if(b.logoUrl) payload.logo_url = b.logoUrl;
           if(b.fillImageUrl) payload.fill_image_url = b.fillImageUrl;
