@@ -2602,13 +2602,9 @@ function renderNav(container){
     container.appendChild(el);
   });
 }
-(function initialPageFromHash(){
-  const validIds = NAV_ITEMS.map(i => i.id);
-  const hashId = (location.hash || '').replace('#','');
-  const startId = validIds.includes(hashId) ? hashId : 'generateur';
-  try{ history.replaceState({page:startId}, '', '#'+startId); }catch(e){}
-  goToPage(startId, {fromPopState:true});
-})();
+// L'appel initial (choix de la page de départ) est fait tout en bas du script,
+// une fois que toutes les fonctions/variables dont dépendent les autres pages
+// (buildStyleGrid, renderSavedBars, etc.) sont bien définies.
 g('changeStyleBtn').addEventListener('click', ()=>goToPage('styles'));
 g('proBtnSidebar').addEventListener('click', ()=>goToPage('abonnement'));
 g('proBtnDrawer').addEventListener('click', ()=>goToPage('abonnement'));
@@ -3727,6 +3723,17 @@ if(document.fonts && document.fonts.load){
 } else {
   updatePreview();
 }
+
+// Page de départ : lue depuis le hash de l'URL (persiste au F5), sinon Générateur par défaut.
+// Placé en tout dernier car goToPage peut appeler buildStyleGrid/renderSavedBars/renderAutomation/etc.,
+// qui dépendent de variables et fonctions définies plus haut dans ce script.
+(function initialPageFromHash(){
+  const validIds = NAV_ITEMS.map(i => i.id);
+  const hashId = (location.hash || '').replace('#','');
+  const startId = validIds.includes(hashId) ? hashId : 'generateur';
+  try{ history.replaceState({page:startId}, '', '#'+startId); }catch(e){}
+  goToPage(startId, {fromPopState:true});
+})();
 </script>
 </body>
 </html>
