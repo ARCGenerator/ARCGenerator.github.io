@@ -206,15 +206,16 @@ body:not(.theme-light) .sidebar-pro .pro-card { background: #000000; }
 
 /* Barres enregistrées */
 .saved-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
-.saved-card { background: #000000; border: 1px solid #2a2a2e; border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.saved-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+body:not(.theme-light) .saved-card { background: #000000; }
 .saved-card canvas { display: block; width: 100%; height: auto; border-radius: 4px; background: #000; }
-.saved-card .name { font-size: 13px; font-weight: 700; color: #f2f2f0; }
-.saved-card .meta { font-size: 10.5px; color: #9a9a9e; }
+.saved-card .name { font-size: 13px; font-weight: 700; color: var(--text); }
+.saved-card .meta { font-size: 10.5px; color: var(--muted); }
 .saved-card .actions { display: flex; gap: 8px; }
 .saved-card .actions button {
   flex: 1; padding: 7px; border-radius: 7px; font-size: 11px; font-weight: 700;
   cursor: pointer; font-family: var(--ui-font); text-transform: uppercase; letter-spacing: .03em;
-  border: 1px solid #333336; background: #1a1a1c; color: #f2f2f0; transition: background .15s;
+  border: 1px solid var(--border); background: var(--surface2); color: var(--text); transition: background .15s;
 }
 .saved-card .actions button.danger { color: #e0554a; border-color: #4a2c28; }
 .saved-card .actions button.icon-btn { flex: 0 0 34px; display: flex; align-items: center; justify-content: center; padding: 0; }
@@ -426,16 +427,17 @@ body.theme-light .plan-card { background: var(--surface); }
   gap: 12px;
 }
 .style-card {
-  background: #000000;
-  border: 1px solid #2a2a2e;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 6px;
   padding: 16px;
   cursor: pointer;
   display: flex; flex-direction: column; gap: 8px;
   transition: border-color .15s, background .15s;
 }
-.style-card:hover { background: #141416; }
-.style-card.on { border-color: #f2f2f0; background: #141416; }
+body:not(.theme-light) .style-card { background: #000000; }
+.style-card:hover { background: var(--surface2); }
+.style-card.on { border-color: var(--text); background: var(--surface2); }
 .style-card canvas {
   width: 100%; height: auto; display: block;
   border-radius: 4px; background: #000;
@@ -443,11 +445,11 @@ body.theme-light .plan-card { background: var(--surface); }
 }
 .style-card .name {
   font-size: 11px; font-weight: 600;
-  text-align: center; color: #9a9a9e;
+  text-align: center; color: var(--muted);
 }
-.style-card.on .name { color: #f2f2f0; }
+.style-card.on .name { color: var(--text); }
 .style-card .desc {
-  font-size: 10px; text-align: center; color: #9a9a9e; opacity: .75;
+  font-size: 10px; text-align: center; color: var(--muted); opacity: .75;
 }
 
 /* MAIN (éditeur) */
@@ -2306,7 +2308,7 @@ const STYLE_LABELS = {
   doubleligne: 'Double ligne',
   points: 'Points',
   rayures: 'Rayures diagonales',
-  jv8bit: 'Jeu vidéo 8-bit',
+  jv8bit: 'Jeu vidéo 8 bits',
   jvchargement: 'Jeu vidéo chargement',
   escalier: 'Marche par étape',
   grille: 'Grille',
@@ -2558,7 +2560,8 @@ const NAV_ITEMS = [
 const styleGrid = g('styleGrid');
 const favGrid = g('favGrid');
 
-function goToPage(id){
+function goToPage(id, opts){
+  opts = opts || {};
   checkPlanExpiry();
   renderNav(g('sidebarNav'));
   renderNav(g('drawerNav'));
@@ -2571,7 +2574,20 @@ function goToPage(id){
   if(id==='automation') renderAutomation();
   closeDrawer();
   g('content')?.scrollTo?.(0,0);
+  if(!opts.fromPopState){
+    try{
+      if(history.state && history.state.page === id){
+        history.replaceState({page:id}, '', '#'+id);
+      } else {
+        history.pushState({page:id}, '', '#'+id);
+      }
+    }catch(e){}
+  }
 }
+window.addEventListener('popstate', function(e){
+  const id = (e.state && e.state.page) || 'generateur';
+  goToPage(id, {fromPopState:true});
+});
 
 function renderNav(container){
   container.innerHTML='';
@@ -2586,7 +2602,8 @@ function renderNav(container){
     container.appendChild(el);
   });
 }
-goToPage('generateur');
+try{ history.replaceState({page:'generateur'}, '', '#generateur'); }catch(e){}
+goToPage('generateur', {fromPopState:true});
 g('changeStyleBtn').addEventListener('click', ()=>goToPage('styles'));
 g('proBtnSidebar').addEventListener('click', ()=>goToPage('abonnement'));
 g('proBtnDrawer').addEventListener('click', ()=>goToPage('abonnement'));
@@ -2617,8 +2634,8 @@ const STYLE_DESC = {
   doubleligne: 'Ligne 1 (0-50%) puis ligne 2 (50-100%)',
   points: '10 points qui se remplissent progressivement',
   rayures: 'Rayures diagonales, cadre fermé, titre au-dessus',
-  jv8bit: 'Comme Arrondie, coins en marches pixel 8-bit',
-  jvchargement: 'Segments inclinés, titre au-dessus, cadre espacé',
+  jv8bit: 'Barre de téléchargement en style 8 bits',
+  jvchargement: "Barre d'écran de chargement style jeu vidéo",
   escalier: 'Blocs qui montent en escalier',
   grille: 'Grille de 160 cases, idéale pour les images',
   etoiles: '10 étoiles qui se remplissent progressivement',
@@ -3083,6 +3100,22 @@ function toDatetimeLocalValue(value){
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+// Brouillon persistant du formulaire d'automatisation : conserve en mémoire ce que
+// l'utilisateur a saisi (texte, dates, style, etc.) quand il navigue vers un autre menu
+// puis revient sur "Automatisation", au lieu de perdre sa saisie à chaque re-rendu de
+// la page. Rien n'est envoyé au serveur — remis à zéro uniquement par un rafraîchissement
+// complet de la page, ou après une création/mise à jour réussie, ou en annulant un recalibrage.
+let automationDraft = {
+  editingAutomationId: null,
+  editingOriginalDates: null,
+  selectedAutoBarConfig: null,
+  fields: null,      // { [inputId]: value }, autoMode: 'date'|'valeur'
+  templateHTML: null
+};
+function resetAutomationDraft(){
+  automationDraft = { editingAutomationId: null, editingOriginalDates: null, selectedAutoBarConfig: null, fields: null, templateHTML: null };
+}
+
 async function renderAutomation(){
   const el = g('automationBody');
   if(getPlan()==='pro'){
@@ -3260,10 +3293,8 @@ async function renderAutomation(){
     });
 
     if(accounts.length > 0){
-      let selectedAutoBarConfig = null;
-      let editingAutomationId = null;
-      let editingOriginalDates = null; // { debut, fin } — évite de retoucher les dates au recalibrage si l'utilisateur n'y a pas touché
-
+      // Ces trois valeurs vivent désormais dans automationDraft (persistant entre les
+      // re-rendus de la page) au lieu de variables locales remises à zéro à chaque visite.
       function chipLabelFor(varName){
         return { nom_evenement: "Nom de l'événement", jours_restants: 'Jours restants', pourcentage: 'Pourcentage' }[varName] || varName;
       }
@@ -3277,8 +3308,8 @@ async function renderAutomation(){
       // Recalibrage : pré-remplit le formulaire avec les valeurs actuelles de
       // l'automatisation choisie, au lieu de repartir d'un formulaire vide.
       function populateFormForEdit(a){
-        editingAutomationId = a.id;
-        selectedAutoBarConfig = null;
+        automationDraft.editingAutomationId = a.id;
+        automationDraft.selectedAutoBarConfig = null;
         g('autoLoadSavedSel').value = '';
         g('autoAccountSel').value = a.x_account_id;
         g('autoStyleSel').value = a.style;
@@ -3291,11 +3322,11 @@ async function renderAutomation(){
         if(isDate){
           g('autoDateDebut').value = toDatetimeLocalValue(a.date_debut);
           g('autoDateFin').value = toDatetimeLocalValue(a.date_fin);
-          editingOriginalDates = { debut: a.date_debut, fin: a.date_fin };
+          automationDraft.editingOriginalDates = { debut: a.date_debut, fin: a.date_fin };
         } else {
           g('autoValeurActuelle').value = a.valeur_actuelle ?? '';
           g('autoObjectif').value = a.objectif ?? '';
-          editingOriginalDates = null;
+          automationDraft.editingOriginalDates = null;
         }
         const totalMin = Math.round((a.frequence_heures || 0) * 60);
         g('autoFrequenceHeuresInp').value = Math.floor(totalMin / 60);
@@ -3306,6 +3337,7 @@ async function renderAutomation(){
         g('cancelEditAutoBtn').style.display = 'inline-block';
         g('autoMsg').textContent = "Recalibrage de l'automatisation « " + (a.nom_evenement || '') + " » — modifiez les champs puis enregistrez.";
         g('autoAccountSel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        saveAutomationDraftFields();
       }
 
       document.querySelectorAll('.edit-auto-btn').forEach(btn => {
@@ -3315,7 +3347,7 @@ async function renderAutomation(){
         });
       });
 
-      g('cancelEditAutoBtn').addEventListener('click', ()=>{ editingOriginalDates = null; renderAutomation(); });
+      g('cancelEditAutoBtn').addEventListener('click', ()=>{ resetAutomationDraft(); renderAutomation(); });
 
       // --- Éditeur "Texte du post" à jetons de variable ---
       // Chaque variable ({nom_evenement}, {jours_restants}, {pourcentage}) est
@@ -3327,8 +3359,12 @@ async function renderAutomation(){
         return `<span class="var-chip" contenteditable="false" data-var="${varName}" title="${varLabel}" style="display:inline-flex;align-items:center;gap:4px;background:#2d6cdf22;color:#5b9dff;border:1px solid #3a7bd5;border-radius:12px;padding:1px 6px 1px 8px;font-size:12px;margin:0 2px;user-select:none;white-space:nowrap;">{${varName}}<span class="var-chip-x" style="cursor:pointer;font-weight:bold;padding:0 2px;">×</span></span>`;
       }
       const autoTemplateEditor = g('autoTemplateInp');
-      if(autoTemplateEditor && !autoTemplateEditor.innerHTML.trim()){
-        autoTemplateEditor.innerHTML = `${chipHTML('nom_evenement',"Nom de l'événement")} : plus que ${chipHTML('jours_restants','Jours restants')} jours ! La barre est à ${chipHTML('pourcentage','Pourcentage')}%`;
+      if(autoTemplateEditor){
+        if(automationDraft.templateHTML !== null){
+          autoTemplateEditor.innerHTML = automationDraft.templateHTML;
+        } else if(!autoTemplateEditor.innerHTML.trim()){
+          autoTemplateEditor.innerHTML = `${chipHTML('nom_evenement',"Nom de l'événement")} : plus que ${chipHTML('jours_restants','Jours restants')} jours ! La barre est à ${chipHTML('pourcentage','Pourcentage')}%`;
+        }
       }
       function insertVarChipAtEnd(varName, varLabel){
         autoTemplateEditor.insertAdjacentHTML('beforeend', chipHTML(varName, varLabel));
@@ -3397,14 +3433,46 @@ async function renderAutomation(){
 
       g('autoLoadSavedSel').addEventListener('change', ()=>{
         const id = g('autoLoadSavedSel').value;
-        if(!id){ selectedAutoBarConfig = null; return; }
+        if(!id){ automationDraft.selectedAutoBarConfig = null; saveAutomationDraftFields(); return; }
         const bar = getSavedBars().find(b => b.id === id);
         if(!bar) return;
-        selectedAutoBarConfig = bar;
+        automationDraft.selectedAutoBarConfig = bar;
         g('autoStyleSel').value = bar.style;
         g('autoColorInp').value = bar.fC1;
         if(!g('autoNomInp').value.trim()) g('autoNomInp').value = bar.name;
+        saveAutomationDraftFields();
       });
+
+      // --- Brouillon persistant : sauvegarde/restauration des champs bruts ---
+      const AUTO_DRAFT_FIELD_IDS = ['autoLoadSavedSel','autoAccountSel','autoStyleSel','autoColorInp','autoNomInp','autoDateDebut','autoDateFin','autoValeurActuelle','autoObjectif','autoFrequenceHeuresInp','autoFrequenceMinutesInp'];
+      function saveAutomationDraftFields(){
+        const f = {};
+        AUTO_DRAFT_FIELD_IDS.forEach(id => { const elx = g(id); if(elx) f[id] = elx.value; });
+        const modeRadio = document.querySelector('input[name="autoMode"]:checked');
+        if(modeRadio) f.autoMode = modeRadio.value;
+        automationDraft.fields = f;
+        if(autoTemplateEditor) automationDraft.templateHTML = autoTemplateEditor.innerHTML;
+      }
+      function restoreAutomationDraftFields(){
+        const f = automationDraft.fields;
+        if(!f) return;
+        AUTO_DRAFT_FIELD_IDS.forEach(id => { if(f[id] !== undefined && g(id)) g(id).value = f[id]; });
+        if(f.autoMode){
+          const radio = document.querySelector(`input[name="autoMode"][value="${f.autoMode}"]`);
+          if(radio) radio.checked = true;
+          const isDate = f.autoMode === 'date';
+          g('autoModeDate').style.display = isDate ? 'flex' : 'none';
+          g('autoModeValeur').style.display = isDate ? 'none' : 'flex';
+        }
+        if(automationDraft.editingAutomationId){
+          g('createAutoBtn').textContent = 'Enregistrer les modifications';
+          g('cancelEditAutoBtn').style.display = 'inline-block';
+        }
+      }
+      restoreAutomationDraftFields();
+      AUTO_DRAFT_FIELD_IDS.forEach(id => { const elx = g(id); if(elx) elx.addEventListener('input', saveAutomationDraftFields); });
+      document.querySelectorAll('input[name="autoMode"]').forEach(radio => radio.addEventListener('change', saveAutomationDraftFields));
+      if(autoTemplateEditor) autoTemplateEditor.addEventListener('input', saveAutomationDraftFields);
 
       function updateAutoFrequenceDisplay(){
         const isDate = document.querySelector('input[name="autoMode"]:checked').value === 'date';
@@ -3448,9 +3516,9 @@ async function renderAutomation(){
           // valeur d'origine, on réutilise l'ISO stocké tel quel — évite tout
           // risque de dérive d'une minute/heure à l'aller-retour affichage <-> stockage
           // quand l'utilisateur ne voulait modifier que le texte, par exemple.
-          if(editingAutomationId && editingOriginalDates){
-            if(toDatetimeLocalValue(editingOriginalDates.debut) === startVal) startISO = editingOriginalDates.debut;
-            if(toDatetimeLocalValue(editingOriginalDates.fin) === endVal) endISO = editingOriginalDates.fin;
+          if(automationDraft.editingAutomationId && automationDraft.editingOriginalDates){
+            if(toDatetimeLocalValue(automationDraft.editingOriginalDates.debut) === startVal) startISO = automationDraft.editingOriginalDates.debut;
+            if(toDatetimeLocalValue(automationDraft.editingOriginalDates.fin) === endVal) endISO = automationDraft.editingOriginalDates.fin;
           }
           frequenceHeures = computeAutoFrequenceHeures(startVal, endVal);
           if(!frequenceHeures){ msg.textContent = 'La date/heure de fin doit être après la date/heure de début.'; return; }
@@ -3473,8 +3541,8 @@ async function renderAutomation(){
         // En recalibrage, on repart de la personnalisation déjà en base pour
         // cette automatisation (sinon un simple recalibrage de dates/fréquence
         // effacerait les couleurs/dégradés déjà configurés).
-        if(editingAutomationId){
-          const current = automations.find(x => x.id === editingAutomationId);
+        if(automationDraft.editingAutomationId){
+          const current = automations.find(x => x.id === automationDraft.editingAutomationId);
           if(current){
             Object.assign(payload, {
               fill_color_2: current.fill_color_2, fill_grad: current.fill_grad, fill_dir: current.fill_dir,
@@ -3487,8 +3555,8 @@ async function renderAutomation(){
         }
         // Personnalisation complète reprise de la barre enregistrée sélectionnée, si choisie —
         // prioritaire sur les valeurs de recalibrage ci-dessus.
-        if(selectedAutoBarConfig){
-          const b = selectedAutoBarConfig;
+        if(automationDraft.selectedAutoBarConfig){
+          const b = automationDraft.selectedAutoBarConfig;
           Object.assign(payload, {
             fill_color_2: b.fC2, fill_grad: !!b.fillGrad, fill_dir: b.fillDir,
             border_color_1: b.bC1, border_color_2: b.bC2, border_grad: !!b.borderGrad, border_dir: b.borderDir,
@@ -3510,7 +3578,7 @@ async function renderAutomation(){
           if(isNaN(payload.valeur_actuelle) || isNaN(payload.objectif)){ msg.textContent = 'Renseignez valeur actuelle et objectif.'; return; }
         }
 
-        msg.textContent = editingAutomationId ? 'Mise à jour...' : 'Création...';
+        msg.textContent = automationDraft.editingAutomationId ? 'Mise à jour...' : 'Création...';
         const imageFields = [
           ['autoLogoFile', 'automation-logo', 'logo_url'],
           ['autoFillFile', 'automation-fill', 'fill_image_url'],
@@ -3525,17 +3593,16 @@ async function renderAutomation(){
             filesToUpload.map(([inputId, slot]) => uploadFileToStorage(g(inputId).files[0], slot))
           );
           filesToUpload.forEach(([, , field], i) => { if(uploads[i]) payload[field] = uploads[i]; });
-          msg.textContent = editingAutomationId ? 'Mise à jour...' : 'Création...';
+          msg.textContent = automationDraft.editingAutomationId ? 'Mise à jour...' : 'Création...';
         }
         // Les images non ré-uploadées ne sont pas incluses dans payload : en
         // mise à jour, update() ne touche pas aux colonnes absentes, donc les
         // images déjà en place restent inchangées automatiquement.
-        const error = editingAutomationId
-          ? await updateAutomation(editingAutomationId, payload)
+        const error = automationDraft.editingAutomationId
+          ? await updateAutomation(automationDraft.editingAutomationId, payload)
           : await createAutomation(payload);
         if(error){ msg.textContent = `Erreur : ${error.message}`; return; }
-        editingAutomationId = null;
-        editingOriginalDates = null;
+        resetAutomationDraft();
         renderAutomation();
       });
     }
