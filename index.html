@@ -2602,8 +2602,13 @@ function renderNav(container){
     container.appendChild(el);
   });
 }
-try{ history.replaceState({page:'generateur'}, '', '#generateur'); }catch(e){}
-goToPage('generateur', {fromPopState:true});
+(function initialPageFromHash(){
+  const validIds = NAV_ITEMS.map(i => i.id);
+  const hashId = (location.hash || '').replace('#','');
+  const startId = validIds.includes(hashId) ? hashId : 'generateur';
+  try{ history.replaceState({page:startId}, '', '#'+startId); }catch(e){}
+  goToPage(startId, {fromPopState:true});
+})();
 g('changeStyleBtn').addEventListener('click', ()=>goToPage('styles'));
 g('proBtnSidebar').addEventListener('click', ()=>goToPage('abonnement'));
 g('proBtnDrawer').addEventListener('click', ()=>goToPage('abonnement'));
