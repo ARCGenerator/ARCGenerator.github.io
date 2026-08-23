@@ -1742,6 +1742,70 @@ function renderCoeursvide(ctx,p){
   }
 }
 
+// 7b. GAME OVER (pixel art, 10 crânes, progression horizontale — même principe que Cœurs)
+const SKULL_BITMAP = [
+  "00011111111000",
+  "00111111111100",
+  "01111111111110",
+  "01000111100010",
+  "10000011000001",
+  "10000011000001",
+  "10000011000001",
+  "11000111100011",
+  "01111100111110",
+  "00111100111100",
+  "00011111111000",
+  "00011011011000",
+  "00011011011000"
+];
+function renderGameover(ctx,p){
+  paintBackground(ctx);
+  ctx.font='700 34px Inter, sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  if(imgLogo){const logoH=95, logoW=(imgLogo.width/imgLogo.height)*logoH; ctx.drawImage(imgLogo, W/2-logoW/2, 75-logoH/2, logoW, logoH);}
+  else{ctx.fillStyle=txtColor.value; ctx.fillText(pctLabel(titleInp.value, pctSlider.value), W/2, 75);}
+
+  const n=10, px=8, gap=20;
+  const skullW = SKULL_BITMAP[0].length * px;
+  const totalW = n * skullW + (n-1) * gap;
+  const startX = (W - totalW) / 2;
+  const startY = 150;
+  const skullH = SKULL_BITMAP.length * px;
+  const pct=parseInt(pctSlider.value);
+  const fillBoundaryX = startX + totalW * pct / 100;
+  const fillStyle = getFillStyle(ctx,startX,startY,startX+totalW,startY+skullH,fC1.value,fC2.value,fillGrad,fillDir);
+
+  // Même correction que Cœurs : coupe proportionnelle du bloc-pixel à la frontière,
+  // pour un remplissage progressif au lieu d'un saut de bloc entier par palier de %.
+  for(let h=0;h<n;h++){
+    const skullX=startX+h*(skullW+gap);
+    for(let r=0;r<SKULL_BITMAP.length;r++){
+      for(let c=0;c<SKULL_BITMAP[r].length;c++){
+        if(SKULL_BITMAP[r][c]!=='1') continue;
+        const pxX=skullX+c*px, pxY=startY+r*px, bw=px-1;
+        const pxR=pxX+bw;
+        if(pxR<=fillBoundaryX){
+          if(imgFill){ctx.save();ctx.beginPath();ctx.rect(pxX,pxY,bw,bw);ctx.clip();drawCover(ctx,imgFill,startX,startY,totalW,skullH);ctx.restore();}
+          else{ctx.fillStyle=fillStyle; ctx.fillRect(pxX,pxY,bw,bw);}
+        } else if(pxX>=fillBoundaryX){
+          if(imgEmpty){ctx.save();ctx.beginPath();ctx.rect(pxX,pxY,bw,bw);ctx.clip();drawCover(ctx,imgEmpty,startX,startY,totalW,skullH);ctx.restore();}
+          else{ctx.fillStyle=emptyColor; ctx.fillRect(pxX,pxY,bw,bw);}
+        } else {
+          const cutW=fillBoundaryX-pxX;
+          if(cutW>0){
+            if(imgFill){ctx.save();ctx.beginPath();ctx.rect(pxX,pxY,cutW,bw);ctx.clip();drawCover(ctx,imgFill,startX,startY,totalW,skullH);ctx.restore();}
+            else{ctx.fillStyle=fillStyle; ctx.fillRect(pxX,pxY,cutW,bw);}
+          }
+          if(cutW<bw){
+            if(imgEmpty){ctx.save();ctx.beginPath();ctx.rect(pxX+cutW,pxY,bw-cutW,bw);ctx.clip();drawCover(ctx,imgEmpty,startX,startY,totalW,skullH);ctx.restore();}
+            else{ctx.fillStyle=emptyColor; ctx.fillRect(pxX+cutW,pxY,bw-cutW,bw);}
+          }
+        }
+      }
+    }
+  }
+}
+
 // 8. DOUBLE LIGNE (deux lignes de taille égale, remplissage séquentiel : ligne 1 = 0→50%, ligne 2 = 50→100%)
 function renderDoubleLigne(ctx,p){
   const lX=100, lW=1800;
@@ -2308,6 +2372,7 @@ const STYLES = {
   lignefine: renderLigneFine,
   coeurs: renderCoeurs,
   coeursvide: renderCoeursvide,
+  gameover: renderGameover,
   doubleligne: renderDoubleLigne,
   points: renderPoints,
   rayures: renderRayures,
@@ -2327,6 +2392,7 @@ const STYLE_LABELS = {
   lignefine: 'Ligne fine',
   coeurs: 'Cœurs',
   coeursvide: 'Cœurs Vide',
+  gameover: 'Game Over',
   doubleligne: 'Double ligne',
   points: 'Points',
   rayures: 'Rayures diagonales',
@@ -2338,7 +2404,7 @@ const STYLE_LABELS = {
   chevrons: 'Chevron',
   batterie: 'Icône batterie'
 };
-const STYLE_HIDES_BORDER = ['minimaliste', 'lignefine', 'coeurs', 'coeursvide', 'doubleligne', 'points', 'escalier', 'grille', 'etoiles', 'chevrons'];
+const STYLE_HIDES_BORDER = ['minimaliste', 'lignefine', 'coeurs', 'coeursvide', 'gameover', 'doubleligne', 'points', 'escalier', 'grille', 'etoiles', 'chevrons'];
 const STYLE_HIDES_EMPTY = ['batterie']; // La batterie n'a pas de "zone vide" : son contour utilise la couleur "Contour"
 const STYLE_HIDES_PCT = ['default', 'minimaliste', 'arrondie', 'rayures', 'jv8bit', 'jvchargement', 'escalier', 'batterie', 'twitter2']; // Styles qui n'affichent pas le pourcentage dans le texte
 const STYLE_HIDES_LOGO = ['twitter2']; // Styles qui ne supportent pas de logo
@@ -2579,7 +2645,7 @@ const ICON_CROWN_BADGE = arcDiamondSvg('crown-badge');
 const ICON_LOCK_BADGE = arcDiamondSvg('lock-badge-icon');
 const NAV_ITEMS = [
   {id:'generateur', icon:ICON_HOUSE,    label:'Générateur'},
-  {id:'styles',     icon:ICON_GRID,     label:'Styles de barres', tag:'17 styles', crownIf:()=>getPlan()==='free'},
+  {id:'styles',     icon:ICON_GRID,     label:'Styles de barres', tag:'18 styles', crownIf:()=>getPlan()==='free'},
   {id:'favoris',    icon:ICON_HEART,    label:'Favoris'},
   {id:'saved',      icon:ICON_BOOKMARK, label:'Barres enregistrées'},
   {id:'settings',   icon:ICON_GEAR,     label:'Paramètres'},
@@ -2661,6 +2727,7 @@ const STYLE_DESC = {
   lignefine: 'Ligne fine et minimaliste',
   coeurs: '10 cœurs pixel art pleins',
   coeursvide: '10 cœurs pixel art en contour',
+  gameover: '10 crânes pixel art pleins',
   doubleligne: 'Ligne 1 (0-50%) puis ligne 2 (50-100%)',
   points: '10 points qui se remplissent progressivement',
   rayures: 'Rayures diagonales, cadre fermé, titre au-dessus',
@@ -3695,8 +3762,13 @@ function renderAbonnement(){
       if(plan.id==='free'){ btnLabel='Plan actuel'; btnDisabled=true; }
       else if(cancelled){ btnLabel='Résiliation en cours'; btnDisabled=true; }
       else { btnLabel='Résilier mon abonnement'; }
+    } else if(plan.id==='free' && current!=='free'){
+      // "Repasser en Free" depuis un plan payant = résiliation : on garde les avantages
+      // jusqu'à la fin de la période déjà payée, comme "Résilier mon abonnement".
+      if(cancelled){ btnLabel = nextBilling ? `Actif dès le ${nextBilling.toLocaleDateString('fr-FR')}` : 'Prochainement actif'; btnDisabled=true; }
+      else { btnLabel='Repasser en Free'; }
     } else {
-      btnLabel = plan.id==='free' ? 'Repasser en Free' : 'Choisir ce plan';
+      btnLabel = 'Choisir ce plan';
     }
     const hasAnnual = !!plan.annualPrice;
     const showAnnual = billingCycle === 'annual' && hasAnnual;
@@ -3727,6 +3799,17 @@ function renderAbonnement(){
       if(isCurrent && plan.id!=='free' && !cancelled){
         // Résiliation : les avantages restent actifs jusqu'à la prochaine date de facturation
         if(confirm(`Résilier votre abonnement ${plan.name} ? Vous garderez vos avantages jusqu'à la fin de la période déjà payée, puis vous repasserez en Free automatiquement.`)){
+          cancelSubscription();
+          renderNav(g('sidebarNav')); renderNav(g('drawerNav'));
+          renderAbonnement();
+        }
+        return;
+      }
+      if(!isCurrent && plan.id==='free' && current!=='free' && !cancelled){
+        // "Repasser en Free" depuis un plan payant = même résiliation que le bouton
+        // "Résilier mon abonnement" : pas de downgrade immédiat, avantages conservés jusqu'à la date de fin.
+        const currentPlan = PLANS.find(x=>x.id===current);
+        if(confirm(`Résilier votre abonnement ${currentPlan ? currentPlan.name : ''} ? Vous garderez vos avantages jusqu'à la fin de la période déjà payée, puis vous repasserez en Free automatiquement.`)){
           cancelSubscription();
           renderNav(g('sidebarNav')); renderNav(g('drawerNav'));
           renderAbonnement();
