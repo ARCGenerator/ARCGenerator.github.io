@@ -916,9 +916,7 @@ input[type=color] { width: 34px; height: 34px; border: 1px solid var(--border); 
             </div>
             <div class="sections-container">
               <div class="setting-row">
-                <div class="icon-box">
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                </div>
+                <div class="icon-box" id="styleIconBox"></div>
                 <div class="setting-content">
                   <span class="setting-label">Style</span>
                   <span class="setting-value" id="currentStyleName">Twitter (X)</span>
@@ -2094,7 +2092,7 @@ function renderJVChargement(ctx,p){
   }
 
   for(let i=0;i<n;i++){
-    const sx=pX+i*(segW+segGap), sr=sx+segW;
+    const sx=pX-skew/2+i*(segW+segGap), sr=sx+segW;
     ctx.save(); slantSegPath(ctx,sx,pY,segW,pH,skew); ctx.clip();
     // marge horizontale pour couvrir tout le parallélogramme incliné malgré le clip rectangulaire des sous-remplissages
     const mx=sx-skew, mw=segW+skew*2;
@@ -2405,6 +2403,30 @@ const STYLE_LABELS = {
   batterie: 'Icône batterie'
 };
 const STYLE_HIDES_BORDER = ['minimaliste', 'lignefine', 'coeurs', 'coeursvide', 'gameover', 'doubleligne', 'points', 'escalier', 'grille', 'etoiles', 'chevrons'];
+
+// Motif/icône illustrant chaque style dans la ligne "Style" de la table Général.
+// Twitter/Twitter II : icône bulle de discussion neutre (le logo X est une marque déposée,
+// pas de garantie d'usage libre — on évite de le reproduire).
+const STYLE_ICONS = {
+  default: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>',
+  twitter2: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2C6.48 2 2 5.94 2 10.8c0 2.77 1.44 5.24 3.7 6.86-.12.98-.5 2.62-1.46 4.07 0 0 2.55-.24 4.94-1.98A11.9 11.9 0 0 0 12 19.6c5.52 0 10-3.94 10-8.8S17.52 2 12 2z"/></svg>',
+  minimaliste: '<svg viewBox="0 0 24 24" width="18" height="18"><rect x="3" y="11" width="18" height="2" rx="1" fill="currentColor"/></svg>',
+  arrondie: '<svg viewBox="0 0 24 24" width="18" height="18"><rect x="3" y="8" width="18" height="8" rx="4" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+  lignefine: '<svg viewBox="0 0 24 24" width="18" height="18"><rect x="3" y="11.2" width="18" height="1.5" fill="currentColor"/></svg>',
+  coeurs: '<span style="font-size:16px;line-height:1;">♥</span>',
+  coeursvide: '<span style="font-size:16px;line-height:1;">♡</span>',
+  gameover: '<span style="font-size:15px;line-height:1;">💀</span>',
+  doubleligne: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><rect x="3" y="6" width="18" height="4" rx="2"/><rect x="3" y="14" width="18" height="4" rx="2"/></svg>',
+  points: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><circle cx="6" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="18" cy="12" r="2.2"/></svg>',
+  rayures: '<svg viewBox="0 0 24 24" width="18" height="18"><g stroke="currentColor" stroke-width="2"><line x1="2" y1="18" x2="10" y2="4"/><line x1="10" y1="20" x2="18" y2="4"/><line x1="16" y1="20" x2="22" y2="10"/></g></svg>',
+  jv8bit: '<span style="font-size:15px;line-height:1;">🎮</span>',
+  jvchargement: '<span style="font-size:15px;line-height:1;">⏳</span>',
+  escalier: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M3 20h4v-4h4v-4h4v-4h4V4h2v18H3z"/></svg>',
+  grille: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>',
+  etoiles: '<span style="font-size:16px;line-height:1;">★</span>',
+  chevrons: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 6l6 6-6 6M13 6l6 6-6 6"/></svg>',
+  batterie: '<span style="font-size:15px;line-height:1;">🔋</span>'
+};
 const STYLE_HIDES_EMPTY = ['batterie']; // La batterie n'a pas de "zone vide" : son contour utilise la couleur "Contour"
 const STYLE_HIDES_PCT = ['default', 'minimaliste', 'arrondie', 'rayures', 'jv8bit', 'jvchargement', 'escalier', 'batterie', 'twitter2']; // Styles qui n'affichent pas le pourcentage dans le texte
 const STYLE_HIDES_LOGO = ['twitter2']; // Styles qui ne supportent pas de logo
@@ -2432,6 +2454,7 @@ function updatePreview(){
   // scroll uniquement pour cette barre si l'aperçu dépasse la hauteur disponible.
   previewWrap.classList.toggle('tall-preview', currentStyle==='grille');
   const nameEl=g('currentStyleName'); if(nameEl) nameEl.textContent=STYLE_LABELS[currentStyle];
+  const iconBoxEl=g('styleIconBox'); if(iconBoxEl) iconBoxEl.innerHTML=STYLE_ICONS[currentStyle] || STYLE_ICONS.default;
   updateWatermark();
 }
 
@@ -2727,7 +2750,7 @@ const STYLE_DESC = {
   lignefine: 'Ligne fine et minimaliste',
   coeurs: '10 cœurs pixel art pleins',
   coeursvide: '10 cœurs pixel art en contour',
-  gameover: '10 crânes pixel art pleins',
+  gameover: '10 crânes pixel art',
   doubleligne: 'Ligne 1 (0-50%) puis ligne 2 (50-100%)',
   points: '10 points qui se remplissent progressivement',
   rayures: 'Rayures diagonales, cadre fermé, titre au-dessus',
@@ -3155,7 +3178,7 @@ const PLANS = [
   },
   {
     id:'creatif', name:'Créatif', price:'2.50', annualPrice:'1.50', annualTotal:'18', tagline:'Pour les créatifs qui veulent juste de beaux rendus.',
-    features:['Téléchargements illimités', 'Export HD', 'Barres enregistrées illimitées', '15 styles de barres supplémentaire']
+    features:['Téléchargements illimités', 'Export HD', 'Barres enregistrées illimitées', "L'intégralité des styles de barres débloqués"]
   },
   {
     id:'pro', name:'Pro', price:'5', annualPrice:'3.90', annualTotal:'46.80', tagline:'Pour automatiser vos barres directement sur X.',
