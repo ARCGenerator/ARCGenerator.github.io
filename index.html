@@ -3382,14 +3382,9 @@ async function renderAutomation(){
               <select class="txt-inp" id="autoAccountSel">${accountOptions}</select>
             </div>
           </div>
-          <div class="af-row">
-            <div class="af-col">
-              <label class="af-label">Style de barre</label>
-              <select class="txt-inp" id="autoStyleSel">${styleOptions}</select>
-            </div>
-            <div class="af-col"></div>
-          </div>
         </div>
+
+        <select id="autoStyleSel" style="display:none;">${styleOptions}</select>
 
         <hr class="af-hr">
 
@@ -3447,7 +3442,6 @@ async function renderAutomation(){
             </div>
           </div>
           <div class="af-post-builder" id="autoTemplateInp" contenteditable="true"></div>
-          <p class="af-help">Renseignez la date/heure de début et de fin pour calculer la fréquence automatiquement.</p>
         </div>
 
         <hr class="af-hr">
