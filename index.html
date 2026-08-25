@@ -771,7 +771,7 @@ input[type=color] { width: 34px; height: 34px; border: 1px solid var(--border); 
   .style-grid { grid-template-columns: 1fr 1fr; }
 }
 /* --- Formulaire "Créer une automatisation" (af-) --- */
-.af-container { border:1px solid var(--border); border-radius:12px; padding:1.75rem; background:var(--surface); max-width:600px; }
+.af-container { border:1px solid var(--border); border-radius:12px; padding:1.75rem; background:#000000; max-width:600px; }
 .af-section { margin-bottom:1.6rem; }
 .af-section:last-child { margin-bottom:0; }
 .af-h2 { font-size:15px; font-weight:700; color:var(--text); margin-bottom:1rem; }
@@ -786,8 +786,8 @@ input[type=color] { width: 34px; height: 34px; border: 1px solid var(--border); 
 .af-radio-label { display:flex; align-items:center; gap:.6rem; cursor:pointer; color:var(--label); font-size:13.5px; }
 .af-radio-label input { display:none; }
 .af-radio-custom { width:18px; height:18px; border:2px solid var(--label); border-radius:50%; position:relative; flex-shrink:0; }
-.af-radio-label input:checked + .af-radio-custom { border-color:var(--accent); }
-.af-radio-label input:checked + .af-radio-custom::after { content:''; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:9px; height:9px; background:var(--accent); border-radius:50%; }
+.af-radio-label input:checked + .af-radio-custom { border-color:#3b82f6; }
+.af-radio-label input:checked + .af-radio-custom::after { content:''; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:9px; height:9px; background:#3b82f6; border-radius:50%; }
 .af-radio-label input:checked ~ span { color:var(--text); }
 .af-header-badge { display:flex; align-items:center; gap:.75rem; margin-bottom:1rem; }
 .af-header-badge .af-h2 { margin-bottom:0; }
@@ -2483,7 +2483,11 @@ function updatePreview(){
     : ((currentStyle === 'default' && imgBg) ? 'transparent' : bgCol.value);
   const dpr=window.devicePixelRatio||1;
   const ctx = canvas.getContext('2d');
-  const s = dpr;
+  // Résolution minimale de 2x indépendante du devicePixelRatio de l'écran :
+  // sur un écran non-Retina (dpr=1), le canvas serait rendu à sa taille native
+  // (2000x400) avec moins de marge d'anti-crénelage que l'export (toujours 3x),
+  // ce qui rend le texte légèrement pixelisé dans l'aperçu par rapport au PNG téléchargé.
+  const s = Math.max(dpr, 2);
   const ch = styleCanvasH(currentStyle);
   canvas.width = W*s; canvas.height = ch*s;
   ctx.scale(s,s);
@@ -3426,39 +3430,14 @@ async function renderAutomation(){
 
         <hr class="af-hr">
 
-        <div class="af-section">
-          <div class="af-h2">Images (optionnel)</div>
-          <div class="af-file-grid">
-            <div class="af-col">
-              <label class="af-label">Logo — inclus dans les posts automatiques</label>
-              <input class="txt-inp" type="file" id="autoLogoFile" accept="image/*">
-            </div>
-            <div class="af-col">
-              <label class="af-label">Image de remplissage</label>
-              <input class="txt-inp" type="file" id="autoFillFile" accept="image/*">
-            </div>
-            <div class="af-col">
-              <label class="af-label">Image de contour</label>
-              <input class="txt-inp" type="file" id="autoBorderFile" accept="image/*">
-            </div>
-            <div class="af-col">
-              <label class="af-label">Image de zone vide</label>
-              <input class="txt-inp" type="file" id="autoEmptyFile" accept="image/*">
-            </div>
-            <div class="af-col">
-              <label class="af-label">Image de fond</label>
-              <input class="txt-inp" type="file" id="autoBgFile" accept="image/*">
-            </div>
-          </div>
-        </div>
-
-        <hr class="af-hr">
+        <input type="file" id="autoLogoFile" accept="image/*" style="display:none;">
+        <input type="file" id="autoFillFile" accept="image/*" style="display:none;">
+        <input type="file" id="autoBorderFile" accept="image/*" style="display:none;">
+        <input type="file" id="autoEmptyFile" accept="image/*" style="display:none;">
+        <input type="file" id="autoBgFile" accept="image/*" style="display:none;">
 
         <div class="af-section">
-          <div class="af-header-badge">
-            <div class="af-h2">Texte du post</div>
-            <span class="af-badge">Variables disponibles</span>
-          </div>
+          <div class="af-h2">Texte du post</div>
           <div style="position:relative;display:inline-block;margin-bottom:.6rem;">
             <button type="button" class="plan-btn" id="autoAddVarBtn" style="width:auto;padding:4px 10px;font-size:12px;margin-bottom:0;">+ Ajouter une variable</button>
             <div id="autoAddVarMenu" style="display:none;position:absolute;top:100%;left:0;z-index:20;background:#1a1a2e;border:1px solid #333;border-radius:8px;padding:4px;min-width:170px;box-shadow:0 4px 12px rgba(0,0,0,.4);">
@@ -3468,7 +3447,7 @@ async function renderAutomation(){
             </div>
           </div>
           <div class="af-post-builder" id="autoTemplateInp" contenteditable="true"></div>
-          <p class="af-help">Renseignez la date/heure de début et de fin (fin après début) pour calculer la fréquence automatiquement.</p>
+          <p class="af-help">Renseignez la date/heure de début et de fin pour calculer la fréquence automatiquement.</p>
         </div>
 
         <hr class="af-hr">
@@ -3702,7 +3681,7 @@ async function renderAutomation(){
         const h = computeAutoFrequenceHeures(g('autoDateDebut').value, g('autoDateFin').value);
         g('autoFrequenceAuto').textContent = h
           ? `Publication automatique toutes les ${formatFrequenceLabel(h)} environ (${AUTO_FREQ_STEPS} publications réparties de 0% à 100%, calculé automatiquement à partir des dates ci-dessus).`
-          : 'Renseignez la date/heure de début et de fin (fin après début) pour calculer la fréquence automatiquement.';
+          : 'Renseignez la date/heure de début et de fin pour calculer la fréquence automatiquement.';
       }
 
       document.querySelectorAll('input[name="autoMode"]').forEach(radio => {
