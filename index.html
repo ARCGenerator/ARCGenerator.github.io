@@ -2559,19 +2559,31 @@ function updateWatermark(){
   const wm = g('previewWatermark');
   if(!wm) return;
   if(getPlan() === 'free'){
-    if(!wm.dataset.built){
-      let html = '';
-      for(let i=0;i<14;i++) html += '<span>PBG · PREVIEW</span>';
-      wm.innerHTML = html;
-      wm.dataset.built = '1';
-    }
     wm.style.display = 'flex';
+    // Le nombre de pastilles nécessaires dépend de la taille réellement affichée
+    // (très différente entre mobile et desktop, où l'aperçu est bien plus large) :
+    // on le recalcule à chaque fois que la taille rendue change, plutôt qu'une
+    // seule fois pour toutes, sinon un aperçu large laisse un vide en bas.
+    const w = wm.clientWidth, h = wm.clientHeight;
+    const sizeKey = `${w}x${h}`;
+    if(wm.dataset.builtSize !== sizeKey && w > 0 && h > 0){
+      // Empreinte approximative d'une pastille pivotée (-28deg) avec ses marges de
+      // respiration ; on ajoute une rangée/colonne de marge pour ne jamais être short.
+      const cols = Math.max(1, Math.ceil(w / 190));
+      const rows = Math.max(1, Math.ceil(h / 100));
+      const count = Math.min(60, Math.max(10, cols * rows));
+      let html = '';
+      for(let i=0;i<count;i++) html += '<span>ARC · PREVIEW</span>';
+      wm.innerHTML = html;
+      wm.dataset.builtSize = sizeKey;
+    }
     // Fond transparent (damier clair) ou couleur de fond claire → filigrane noir plutôt que blanc, sinon illisible
     wm.classList.toggle('on-light', bgTransparent || isLightColor(bgCol.value));
   } else {
     wm.style.display = 'none';
   }
 }
+window.addEventListener('resize', ()=>{ if(typeof updateWatermark==='function') updateWatermark(); });
 function isLightColor(hex){
   const h = (hex||'').replace('#','');
   if(h.length!==6) return false;
