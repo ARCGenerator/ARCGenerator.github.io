@@ -1420,13 +1420,8 @@ function buildAutomationRow(payload){
     nom_evenement: payload.nom_evenement,
     template_texte: payload.template_texte,
     frequence_heures: payload.frequence_heures,
-    // On vide explicitement les champs du mode non utilisé : évite de garder
-    // une ancienne date/valeur fantôme en base si l'utilisateur recalibre une
-    // automatisation en changeant de mode (date <-> valeur).
-    date_debut: payload.mode === 'date' ? payload.date_debut : null,
-    date_fin: payload.mode === 'date' ? payload.date_fin : null,
-    valeur_actuelle: payload.mode === 'valeur' ? payload.valeur_actuelle : null,
-    objectif: payload.mode === 'valeur' ? payload.objectif : null,
+    date_debut: payload.date_debut,
+    date_fin: payload.date_fin,
   };
   if(payload.logo_url) row.logo_url = payload.logo_url;
   if(payload.fill_image_url) row.fill_image_url = payload.fill_image_url;
@@ -3371,7 +3366,7 @@ let automationDraft = {
   editingAutomationId: null,
   editingOriginalDates: null,
   selectedAutoBarConfig: null,
-  fields: null,      // { [inputId]: value }, autoMode: 'date'|'valeur'
+  fields: null,      // { [inputId]: value }
   templateHTML: null
 };
 function resetAutomationDraft(){
@@ -3486,11 +3481,6 @@ async function renderAutomation(){
             <input class="txt-inp" id="autoNomInp" placeholder="E.g.: Super Bowl">
           </div>
 
-          <div class="af-radio-group">
-            <label class="af-radio-label"><input type="radio" name="autoMode" value="date" checked><div class="af-radio-custom"></div><span>Countdown (date)</span></label>
-            <label class="af-radio-label"><input type="radio" name="autoMode" value="valeur"><div class="af-radio-custom"></div><span>Goal (value/target)</span></label>
-          </div>
-
           <div id="autoModeDate" class="af-row">
             <div class="af-col">
               <label class="af-label">Start date and time</label>
@@ -3499,16 +3489,6 @@ async function renderAutomation(){
             <div class="af-col">
               <label class="af-label">End date and time</label>
               <input class="txt-inp" type="datetime-local" id="autoDateFin">
-            </div>
-          </div>
-          <div id="autoModeValeur" class="af-row" style="display:none;">
-            <div class="af-col">
-              <label class="af-label">Current value</label>
-              <input class="txt-inp" type="number" id="autoValeurActuelle">
-            </div>
-            <div class="af-col">
-              <label class="af-label">Target</label>
-              <input class="txt-inp" type="number" id="autoObjectif">
             </div>
           </div>
         </div>
@@ -3537,16 +3517,7 @@ async function renderAutomation(){
         <hr class="af-hr">
 
         <div class="af-section">
-          <div id="autoFrequenceManual">
-            <label class="af-label">Repost every</label>
-            <div class="af-freq-row">
-              <input class="txt-inp" type="number" min="0" id="autoFrequenceHeuresInp" value="24" style="width:70px;">
-              <span class="af-help">h</span>
-              <input class="txt-inp" type="number" min="0" max="59" id="autoFrequenceMinutesInp" value="0" style="width:70px;">
-              <span class="af-help">min</span>
-            </div>
-          </div>
-          <div id="autoFrequenceAuto" class="af-help" style="display:none;margin-top:10px;"></div>
+          <div id="autoFrequenceAuto" class="af-help"></div>
         </div>
 
         <div class="af-actions">
@@ -3598,22 +3569,9 @@ async function renderAutomation(){
         g('autoStyleSel').value = a.style;
         g('autoColorInp').value = a.fill_color_1 || '#facc15';
         g('autoNomInp').value = a.nom_evenement || '';
-        document.querySelector(`input[name="autoMode"][value="${a.mode}"]`).checked = true;
-        const isDate = a.mode === 'date';
-        g('autoModeDate').style.display = isDate ? 'flex' : 'none';
-        g('autoModeValeur').style.display = isDate ? 'none' : 'flex';
-        if(isDate){
-          g('autoDateDebut').value = toDatetimeLocalValue(a.date_debut);
-          g('autoDateFin').value = toDatetimeLocalValue(a.date_fin);
-          automationDraft.editingOriginalDates = { debut: a.date_debut, fin: a.date_fin };
-        } else {
-          g('autoValeurActuelle').value = a.valeur_actuelle ?? '';
-          g('autoObjectif').value = a.objectif ?? '';
-          automationDraft.editingOriginalDates = null;
-        }
-        const totalMin = Math.round((a.frequence_heures || 0) * 60);
-        g('autoFrequenceHeuresInp').value = Math.floor(totalMin / 60);
-        g('autoFrequenceMinutesInp').value = totalMin % 60;
+        g('autoDateDebut').value = toDatetimeLocalValue(a.date_debut);
+        g('autoDateFin').value = toDatetimeLocalValue(a.date_fin);
+        automationDraft.editingOriginalDates = { debut: a.date_debut, fin: a.date_fin };
         autoTemplateEditor.innerHTML = templateTextToEditorHTML(a.template_texte) || autoTemplateEditor.innerHTML;
         updateAutoFrequenceDisplay();
         g('createAutoBtn').textContent = 'Save changes';
@@ -3727,12 +3685,10 @@ async function renderAutomation(){
       });
 
       // --- Brouillon persistant : sauvegarde/restauration des champs bruts ---
-      const AUTO_DRAFT_FIELD_IDS = ['autoLoadSavedSel','autoAccountSel','autoStyleSel','autoColorInp','autoNomInp','autoDateDebut','autoDateFin','autoValeurActuelle','autoObjectif','autoFrequenceHeuresInp','autoFrequenceMinutesInp'];
+      const AUTO_DRAFT_FIELD_IDS = ['autoLoadSavedSel','autoAccountSel','autoStyleSel','autoColorInp','autoNomInp','autoDateDebut','autoDateFin'];
       function saveAutomationDraftFields(){
         const f = {};
         AUTO_DRAFT_FIELD_IDS.forEach(id => { const elx = g(id); if(elx) f[id] = elx.value; });
-        const modeRadio = document.querySelector('input[name="autoMode"]:checked');
-        if(modeRadio) f.autoMode = modeRadio.value;
         automationDraft.fields = f;
         if(autoTemplateEditor) automationDraft.templateHTML = autoTemplateEditor.innerHTML;
       }
@@ -3740,13 +3696,6 @@ async function renderAutomation(){
         const f = automationDraft.fields;
         if(!f) return;
         AUTO_DRAFT_FIELD_IDS.forEach(id => { if(f[id] !== undefined && g(id)) g(id).value = f[id]; });
-        if(f.autoMode){
-          const radio = document.querySelector(`input[name="autoMode"][value="${f.autoMode}"]`);
-          if(radio) radio.checked = true;
-          const isDate = f.autoMode === 'date';
-          g('autoModeDate').style.display = isDate ? 'flex' : 'none';
-          g('autoModeValeur').style.display = isDate ? 'none' : 'flex';
-        }
         if(automationDraft.editingAutomationId){
           g('createAutoBtn').textContent = 'Save changes';
           g('cancelEditAutoBtn').style.display = 'inline-block';
@@ -3754,34 +3703,20 @@ async function renderAutomation(){
       }
       restoreAutomationDraftFields();
       AUTO_DRAFT_FIELD_IDS.forEach(id => { const elx = g(id); if(elx) elx.addEventListener('input', saveAutomationDraftFields); });
-      document.querySelectorAll('input[name="autoMode"]').forEach(radio => radio.addEventListener('change', saveAutomationDraftFields));
       if(autoTemplateEditor) autoTemplateEditor.addEventListener('input', saveAutomationDraftFields);
 
       function updateAutoFrequenceDisplay(){
-        const isDate = document.querySelector('input[name="autoMode"]:checked').value === 'date';
-        g('autoFrequenceManual').style.display = isDate ? 'none' : 'block';
-        g('autoFrequenceAuto').style.display = isDate ? 'block' : 'none';
-        if(!isDate) return;
         const h = computeAutoFrequenceHeures(g('autoDateDebut').value, g('autoDateFin').value);
         g('autoFrequenceAuto').textContent = h
           ? `Automatic posting roughly every ${formatFrequenceLabel(h)} (${AUTO_FREQ_STEPS} posts spread from 0% to 100%, calculated automatically from the dates above).`
           : 'Enter the start and end date/time to calculate the frequency automatically.';
       }
 
-      document.querySelectorAll('input[name="autoMode"]').forEach(radio => {
-        radio.addEventListener('change', ()=>{
-          const isDate = document.querySelector('input[name="autoMode"]:checked').value === 'date';
-          g('autoModeDate').style.display = isDate ? 'flex' : 'none';
-          g('autoModeValeur').style.display = isDate ? 'none' : 'flex';
-          updateAutoFrequenceDisplay();
-        });
-      });
       ['autoDateDebut','autoDateFin'].forEach(id => g(id).addEventListener('input', updateAutoFrequenceDisplay));
       updateAutoFrequenceDisplay();
 
       g('createAutoBtn').addEventListener('click', async ()=>{
         const msg = g('autoMsg');
-        const mode = document.querySelector('input[name="autoMode"]:checked').value;
         const nom = g('autoNomInp').value.trim();
         if(!nom){ msg.textContent = "Enter an event name."; return; }
 
@@ -3797,41 +3732,34 @@ async function renderAutomation(){
           return;
         }
 
-        // Fréquence : calculée automatiquement à partir de l'intervalle exact
-        // en mode "date" (heures/minutes incluses), sinon saisie manuelle h+min.
-        let frequenceHeures, startISO = null, endISO = null;
-        if(mode === 'date'){
-          const startVal = g('autoDateDebut').value, endVal = g('autoDateFin').value;
-          if(!startVal || !endVal){ msg.textContent = "Enter the start and end date and time."; return; }
-          // Converti en instant absolu (UTC) avant stockage, pour que le calcul
-          // reste correct côté serveur quel que soit son fuseau horaire.
-          startISO = new Date(startVal).toISOString();
-          endISO = new Date(endVal).toISOString();
-          // Recalibrage : si le champ affiché n'a pas changé par rapport à la
-          // valeur d'origine, on réutilise l'ISO stocké tel quel — évite tout
-          // risque de dérive d'une minute/heure à l'aller-retour affichage <-> stockage
-          // quand l'utilisateur ne voulait modifier que le texte, par exemple.
-          if(automationDraft.editingAutomationId && automationDraft.editingOriginalDates){
-            if(toDatetimeLocalValue(automationDraft.editingOriginalDates.debut) === startVal) startISO = automationDraft.editingOriginalDates.debut;
-            if(toDatetimeLocalValue(automationDraft.editingOriginalDates.fin) === endVal) endISO = automationDraft.editingOriginalDates.fin;
-          }
-          frequenceHeures = computeAutoFrequenceHeures(startVal, endVal);
-          if(!frequenceHeures){ msg.textContent = 'The end date/time must be after the start date/time.'; return; }
-        } else {
-          const h = parseInt(g('autoFrequenceHeuresInp').value, 10) || 0;
-          const m = parseInt(g('autoFrequenceMinutesInp').value, 10) || 0;
-          frequenceHeures = h + m / 60;
-          if(frequenceHeures <= 0){ msg.textContent = 'Enter a repost frequency greater than 0.'; return; }
+        // Fréquence : calculée automatiquement à partir de l'intervalle exact des dates.
+        const startVal = g('autoDateDebut').value, endVal = g('autoDateFin').value;
+        if(!startVal || !endVal){ msg.textContent = "Enter the start and end date and time."; return; }
+        // Converti en instant absolu (UTC) avant stockage, pour que le calcul
+        // reste correct côté serveur quel que soit son fuseau horaire.
+        let startISO = new Date(startVal).toISOString();
+        let endISO = new Date(endVal).toISOString();
+        // Recalibrage : si le champ affiché n'a pas changé par rapport à la
+        // valeur d'origine, on réutilise l'ISO stocké tel quel — évite tout
+        // risque de dérive d'une minute/heure à l'aller-retour affichage <-> stockage
+        // quand l'utilisateur ne voulait modifier que le texte, par exemple.
+        if(automationDraft.editingAutomationId && automationDraft.editingOriginalDates){
+          if(toDatetimeLocalValue(automationDraft.editingOriginalDates.debut) === startVal) startISO = automationDraft.editingOriginalDates.debut;
+          if(toDatetimeLocalValue(automationDraft.editingOriginalDates.fin) === endVal) endISO = automationDraft.editingOriginalDates.fin;
         }
+        const frequenceHeures = computeAutoFrequenceHeures(startVal, endVal);
+        if(!frequenceHeures){ msg.textContent = 'The end date/time must be after the start date/time.'; return; }
 
         const payload = {
           x_account_id: g('autoAccountSel').value,
           style: g('autoStyleSel').value,
           fill_color_1: g('autoColorInp').value,
-          mode,
+          mode: 'date',
           nom_evenement: nom,
           template_texte: getTemplateText(),
           frequence_heures: frequenceHeures,
+          date_debut: startISO,
+          date_fin: endISO,
         };
         // En recalibrage, on repart de la personnalisation déjà en base pour
         // cette automatisation (sinon un simple recalibrage de dates/fréquence
@@ -3864,15 +3792,6 @@ async function renderAutomation(){
           if(b.emptyImageUrl) payload.empty_image_url = b.emptyImageUrl;
           if(b.bgImageUrl) payload.bg_image_url = b.bgImageUrl;
         }
-        if(mode === 'date'){
-          payload.date_debut = startISO;
-          payload.date_fin = endISO;
-        } else {
-          payload.valeur_actuelle = parseFloat(g('autoValeurActuelle').value);
-          payload.objectif = parseFloat(g('autoObjectif').value);
-          if(isNaN(payload.valeur_actuelle) || isNaN(payload.objectif)){ msg.textContent = 'Enter the current value and target.'; return; }
-        }
-
         msg.textContent = automationDraft.editingAutomationId ? 'Updating...' : 'Creating...';
         const imageFields = [
           ['autoLogoFile', 'automation-logo', 'logo_url'],
