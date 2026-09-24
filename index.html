@@ -113,19 +113,22 @@ body.theme-light .brand-logo-light { display: block; }
 .header-right { display: flex; align-items: center; gap: 14px; }
 .auth-link { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--label); cursor: pointer; user-select: none; transition: color .15s; }
 .auth-link:hover { color: var(--text); }
-.auth-link .login-icon { width: 17px; height: 17px; display: block; }
 .auth-divider { width: 1px; height: 14px; background: var(--border); }
+/* Taille de l'icône pilotée UNIQUEMENT par account-icon-wrap : le svg suit à 100%,
+   donc le point vert (positionné par rapport au wrap) reste toujours collé à l'icône. */
 .account-icon-wrap { position: relative; width: 17px; height: 17px; flex-shrink: 0; transition: width .15s, height .15s; }
+.account-icon-wrap .login-icon { width: 100%; height: 100%; display: block; }
 .icon-badge { position: absolute; display: none; border-radius: 50%; }
 .icon-badge.show { display: block; }
-.icon-badge-connected { width: 7px; height: 7px; right: -2px; bottom: -2px; background: var(--toggle-on); box-shadow: 0 0 0 2px var(--bg); }
-.auth-link.auth-login.is-connected .account-icon-wrap { width: 26px; height: 26px; }
-.auth-link.auth-login.is-connected .icon-badge-connected { width: 9px; height: 9px; }
+.icon-badge-connected { width: 7px; height: 7px; right: -1px; bottom: -1px; background: var(--toggle-on); box-shadow: 0 0 0 2px var(--bg); }
+.auth-link.auth-login.is-connected .account-icon-wrap { width: 28px; height: 28px; }
+.auth-link.auth-login.is-connected .icon-badge-connected { width: 9px; height: 9px; right: -1px; bottom: -1px; }
 @media (max-width: 640px) {
   .header-right { gap: 8px; }
   .auth-link { font-size: 11.5px; }
   .auth-link.auth-login { gap: 4px; }
-  .auth-link .login-icon { width: 15px; height: 15px; }
+  .account-icon-wrap { width: 15px; height: 15px; }
+  .auth-link.auth-login.is-connected .account-icon-wrap { width: 26px; height: 26px; }
   .auth-divider { margin: 0 -2px; }
 }
 
