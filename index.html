@@ -104,11 +104,45 @@ body.theme-light .brand-logo-dark { display: none; }
 body.theme-light .brand-logo-light { display: block; }
 .brand-sep { width: 1px; height: 16px; background: var(--border); }
 .brand-name { font-size: 14px; font-weight: 400; color: var(--label); }
-.theme-toggle { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--label); cursor: pointer; user-select: none; }
 .toggle-switch-lg { width: 40px; height: 22px; background-color: var(--surface2); border-radius: 20px; position: relative; border: 1px solid var(--border); transition: background .2s; flex-shrink: 0; }
 .toggle-switch-lg::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background-color: var(--text); border-radius: 50%; transition: transform .2s; }
 .toggle-switch-lg.on { background: var(--toggle-on); }
 .toggle-switch-lg.on::after { transform: translateX(18px); background: #fff; }
+
+/* --- Sign in / Log in (en-tête, à droite) --- */
+.header-right { display: flex; align-items: center; gap: 14px; }
+.auth-actions { display: flex; align-items: center; gap: 10px; }
+.auth-link { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--label); cursor: pointer; user-select: none; transition: color .15s; }
+.auth-link:hover { color: var(--text); }
+.auth-link .login-icon { width: 17px; height: 17px; flex-shrink: 0; }
+.auth-divider { width: 1px; height: 14px; background: var(--border); }
+.auth-status { display: none; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--label); cursor: pointer; user-select: none; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--toggle-on); box-shadow: 0 0 0 3px rgba(34,197,94,.25); flex-shrink: 0; }
+@media (max-width: 640px) {
+  .header-right { gap: 8px; }
+  .auth-link { font-size: 11.5px; }
+  .auth-link.auth-login { gap: 4px; }
+  .auth-link .login-icon { width: 15px; height: 15px; }
+  .auth-divider { margin: 0 -2px; }
+}
+
+/* --- Toggle thème (icônes soleil/lune), sous la carte Upgrade de la sidebar --- */
+.theme-toggle-mini-wrap { display: flex; align-items: center; gap: 10px; margin: 14px 4px 0; }
+.theme-toggle-mini {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--surface2); border: 1px solid var(--border);
+  position: relative; overflow: hidden; cursor: pointer; flex-shrink: 0;
+}
+.ttm-icon {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  color: var(--text); transition: transform .35s ease, opacity .3s ease;
+}
+.ttm-icon svg { width: 18px; height: 18px; }
+.ttm-moon { opacity: 1; transform: translateY(0) rotate(0deg); }
+.ttm-sun { opacity: 0; transform: translateY(140%) rotate(90deg); }
+body.theme-light .ttm-moon { opacity: 0; transform: translateY(-140%) rotate(-90deg); }
+body.theme-light .ttm-sun { opacity: 1; transform: translateY(0) rotate(0deg); }
+.theme-toggle-label { font-size: 12px; color: var(--muted); }
 
 /* APP SHELL (sidebar persistante desktop + contenu) */
 .app-shell { display: flex; flex: 1; min-height: 0; }
@@ -954,9 +988,22 @@ input[type=color] { width: 34px; height: 34px; border: 1px solid var(--border); 
     <div class="brand-sep"></div>
     <span class="brand-name">Progress Bar Generator</span>
   </div>
-  <div class="theme-toggle" id="themeWrap">
-    <span>Dark Mode</span>
-    <div class="toggle-switch-lg on" id="themeToggle"></div>
+  <div class="header-right">
+    <div class="auth-status" id="authStatus" title="Click to sign out (test only)">
+      <span class="status-dot"></span> Connected
+    </div>
+    <div class="auth-actions" id="authActions">
+      <span class="auth-link auth-signin" id="signInBtn">Sign in</span>
+      <span class="auth-divider"></span>
+      <span class="auth-link auth-login" id="logInBtn">
+        <svg class="login-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8"/>
+          <circle cx="12" cy="10" r="3.4" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M5.5 19.2c1.3-2.6 3.8-4.2 6.5-4.2s5.2 1.6 6.5 4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        Log in
+      </span>
+    </div>
   </div>
 </header>
 
@@ -973,6 +1020,17 @@ input[type=color] { width: 34px; height: 34px; border: 1px solid var(--border); 
     <div class="d">Automate your tweets in a few clicks and unlock more styles.</div>
     <button id="proBtnDrawer">View plans</button>
   </div>
+  <div class="theme-toggle-mini-wrap" style="margin:14px 20px 0;">
+    <div class="theme-toggle-mini" id="themeWrapDrawer" title="Toggle dark/light mode">
+      <span class="ttm-icon ttm-moon">
+        <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M20.7 14.6c-2.9 1.1-6.2.3-8.4-2-2.2-2.2-3-5.5-1.9-8.4.1-.4-.2-.8-.6-.7C6 4.6 3 8.5 3 13c0 5 4 9 9 9 4.5 0 8.4-3.1 9.5-7.8.1-.4-.3-.8-.8-.6z"/></svg>
+      </span>
+      <span class="ttm-icon ttm-sun">
+        <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="4.2"/><g stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="1.5" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22.5"/><line x1="1.5" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22.5" y2="12"/><line x1="4.2" y1="4.2" x2="5.9" y2="5.9"/><line x1="18.1" y1="18.1" x2="19.8" y2="19.8"/><line x1="4.2" y1="19.8" x2="5.9" y2="18.1"/><line x1="18.1" y1="5.9" x2="19.8" y2="4.2"/></g></svg>
+      </span>
+    </div>
+    <span class="theme-toggle-label">Theme</span>
+  </div>
 </div>
 
 <div class="app-shell">
@@ -985,6 +1043,17 @@ input[type=color] { width: 34px; height: 34px; border: 1px solid var(--border); 
         <div class="t"><svg class="pro-logo" viewBox="0 0 60 100" xmlns="http://www.w3.org/2000/svg"><rect x="20" y="2" width="20" height="12" rx="3" fill="#FFE600" stroke="#000" stroke-width="3"/><rect x="5" y="12" width="50" height="84" rx="11" fill="#FFE600" stroke="#000" stroke-width="3"/><path d="M32 22 L13 57 L27 57 L19 84 L47 46 L31 46 Z" fill="#000"/></svg> Upgrade</div>
         <div class="d">Automate your tweets in a few clicks and unlock more styles.</div>
         <button id="proBtnSidebar">View plans</button>
+      </div>
+      <div class="theme-toggle-mini-wrap">
+        <div class="theme-toggle-mini" id="themeWrap" title="Toggle dark/light mode">
+          <span class="ttm-icon ttm-moon">
+            <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M20.7 14.6c-2.9 1.1-6.2.3-8.4-2-2.2-2.2-3-5.5-1.9-8.4.1-.4-.2-.8-.6-.7C6 4.6 3 8.5 3 13c0 5 4 9 9 9 4.5 0 8.4-3.1 9.5-7.8.1-.4-.3-.8-.8-.6z"/></svg>
+          </span>
+          <span class="ttm-icon ttm-sun">
+            <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="4.2"/><g stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="1.5" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22.5"/><line x1="1.5" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22.5" y2="12"/><line x1="4.2" y1="4.2" x2="5.9" y2="5.9"/><line x1="18.1" y1="18.1" x2="19.8" y2="19.8"/><line x1="4.2" y1="19.8" x2="5.9" y2="18.1"/><line x1="18.1" y1="5.9" x2="19.8" y2="4.2"/></g></svg>
+          </span>
+        </div>
+        <span class="theme-toggle-label">Theme</span>
       </div>
     </div>
   </aside>
@@ -2848,11 +2917,14 @@ g('proBtnSidebar').addEventListener('click', ()=>goToPage('abonnement'));
 g('proBtnDrawer').addEventListener('click', ()=>goToPage('abonnement'));
 function applyTheme(isDark){
   document.body.classList.toggle('theme-light', !isDark);
-  g('themeToggle').classList.toggle('on', isDark);
   try{ localStorage.setItem('pbg_theme', isDark ? 'dark' : 'light'); }catch(e){}
   if(typeof updatePctSliderFill==='function') updatePctSliderFill();
 }
 g('themeWrap').addEventListener('click', ()=>{
+  const isCurrentlyDark = !document.body.classList.contains('theme-light');
+  applyTheme(!isCurrentlyDark);
+});
+g('themeWrapDrawer').addEventListener('click', ()=>{
   const isCurrentlyDark = !document.body.classList.contains('theme-light');
   applyTheme(!isCurrentlyDark);
 });
@@ -2861,6 +2933,24 @@ g('themeWrap').addEventListener('click', ()=>{
   try{ saved = localStorage.getItem('pbg_theme'); }catch(e){}
   applyTheme(saved !== 'light');
 })();
+
+/* --- Sign in / Log in (front uniquement pour l'instant) ---
+   TODO: remplacer setAuthState(true) par le vrai flux de connexion une fois
+   le backend d'authentification branché, et signInBtn par le vrai flux d'inscription. */
+function setAuthState(loggedIn){
+  g('authActions').style.display = loggedIn ? 'none' : 'flex';
+  g('authStatus').style.display = loggedIn ? 'flex' : 'none';
+}
+g('logInBtn').addEventListener('click', ()=>{
+  setAuthState(true); // placeholder de démo
+});
+g('signInBtn').addEventListener('click', ()=>{
+  alert('Sign in flow coming soon.'); // placeholder de démo
+});
+g('authStatus').addEventListener('click', ()=>{
+  setAuthState(false); // pratique en test pour se "déconnecter" ; à retirer en prod
+});
+setAuthState(false);
 
 const STYLE_DESC = {
   default: 'Original style with outline',
