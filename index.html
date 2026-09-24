@@ -115,12 +115,12 @@ body.theme-light .brand-logo-light { display: block; }
 .auth-link:hover { color: var(--text); }
 .auth-link .login-icon { width: 17px; height: 17px; display: block; }
 .auth-divider { width: 1px; height: 14px; background: var(--border); }
-.account-icon-wrap { position: relative; width: 17px; height: 17px; flex-shrink: 0; }
+.account-icon-wrap { position: relative; width: 17px; height: 17px; flex-shrink: 0; transition: width .15s, height .15s; }
 .icon-badge { position: absolute; display: none; border-radius: 50%; }
 .icon-badge.show { display: block; }
 .icon-badge-connected { width: 7px; height: 7px; right: -2px; bottom: -2px; background: var(--toggle-on); box-shadow: 0 0 0 2px var(--bg); }
-.icon-badge-plan { width: 10px; height: 10px; left: -3px; bottom: -3px; box-shadow: 0 0 0 2px var(--bg); background: var(--bg); }
-.icon-badge-plan svg { width: 100%; height: 100%; display: block; }
+.auth-link.auth-login.is-connected .account-icon-wrap { width: 26px; height: 26px; }
+.auth-link.auth-login.is-connected .icon-badge-connected { width: 9px; height: 9px; }
 @media (max-width: 640px) {
   .header-right { gap: 8px; }
   .auth-link { font-size: 11.5px; }
@@ -1002,7 +1002,6 @@ input[type=color] { width: 34px; height: 34px; border: 1px solid var(--border); 
           <path d="M5.5 19.2c1.3-2.6 3.8-4.2 6.5-4.2s5.2 1.6 6.5 4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
         </svg>
         <span class="icon-badge icon-badge-connected" id="badgeConnected"></span>
-        <span class="icon-badge icon-badge-plan" id="badgePlan"></span>
       </div>
       <span id="logInLabel">Log in</span>
     </div>
@@ -2942,33 +2941,15 @@ g('themeWrapDrawer').addEventListener('click', ()=>{
 
 /* --- Sign in / Log in (front uniquement pour l'instant) ---
    TODO: remplacer setAuthState(true) par le vrai flux de connexion une fois
-   le backend d'authentification branché, et signInBtn par le vrai flux d'inscription.
-   Le badge plan (bas gauche de l'icône) réutilise PLAN_TIER_DIAMONDS/PLANS,
-   défini plus bas dans le script — ok car il n'est lu qu'au clic, une fois le
-   script entièrement chargé, jamais lors de l'appel initial setAuthState(false). */
-function updateAccountBadges(loggedIn){
-  g('badgeConnected').classList.toggle('show', loggedIn);
-  let tier = null;
-  if(loggedIn){
-    const plan = PLANS.find(p => p.id === getPlan());
-    tier = plan && plan.tier; // undefined pour le plan Free -> pas de badge
-  }
-  const planBadge = g('badgePlan');
-  if(tier && PLAN_TIER_DIAMONDS[tier]){
-    planBadge.innerHTML = PLAN_TIER_DIAMONDS[tier];
-    planBadge.classList.add('show');
-  } else {
-    planBadge.innerHTML = '';
-    planBadge.classList.remove('show');
-  }
-}
+   le backend d'authentification branché, et signInBtn par le vrai flux d'inscription. */
 function setAuthState(loggedIn){
   g('signInBtn').style.display = loggedIn ? 'none' : 'flex';
   g('authDivider').style.display = loggedIn ? 'none' : 'block';
   g('logInLabel').style.display = loggedIn ? 'none' : 'inline';
+  g('logInBtn').classList.toggle('is-connected', loggedIn); // icône plus grande une fois connecté
+  g('badgeConnected').classList.toggle('show', loggedIn);
   g('logoutBtn').style.display = loggedIn ? 'inline-flex' : 'none';
   g('accountStatusLabel').textContent = loggedIn ? "You're signed in" : 'Not signed in';
-  updateAccountBadges(loggedIn);
 }
 g('logInBtn').addEventListener('click', ()=>{
   const isLoggedIn = g('badgeConnected').classList.contains('show');
