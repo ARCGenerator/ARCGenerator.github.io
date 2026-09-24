@@ -111,13 +111,16 @@ body.theme-light .brand-logo-light { display: block; }
 
 /* --- Sign in / Log in (en-tête, à droite) --- */
 .header-right { display: flex; align-items: center; gap: 14px; }
-.auth-actions { display: flex; align-items: center; gap: 10px; }
 .auth-link { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--label); cursor: pointer; user-select: none; transition: color .15s; }
 .auth-link:hover { color: var(--text); }
-.auth-link .login-icon { width: 17px; height: 17px; flex-shrink: 0; }
+.auth-link .login-icon { width: 17px; height: 17px; display: block; }
 .auth-divider { width: 1px; height: 14px; background: var(--border); }
-.auth-status { display: none; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--label); cursor: pointer; user-select: none; }
-.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--toggle-on); box-shadow: 0 0 0 3px rgba(34,197,94,.25); flex-shrink: 0; }
+.account-icon-wrap { position: relative; width: 17px; height: 17px; flex-shrink: 0; }
+.icon-badge { position: absolute; display: none; border-radius: 50%; }
+.icon-badge.show { display: block; }
+.icon-badge-connected { width: 7px; height: 7px; right: -2px; bottom: -2px; background: var(--toggle-on); box-shadow: 0 0 0 2px var(--bg); }
+.icon-badge-plan { width: 10px; height: 10px; left: -3px; bottom: -3px; box-shadow: 0 0 0 2px var(--bg); background: var(--bg); }
+.icon-badge-plan svg { width: 100%; height: 100%; display: block; }
 @media (max-width: 640px) {
   .header-right { gap: 8px; }
   .auth-link { font-size: 11.5px; }
@@ -989,20 +992,19 @@ input[type=color] { width: 34px; height: 34px; border: 1px solid var(--border); 
     <span class="brand-name">Progress Bar Generator</span>
   </div>
   <div class="header-right">
-    <div class="auth-status" id="authStatus" title="Click to sign out (test only)">
-      <span class="status-dot"></span> Connected
-    </div>
-    <div class="auth-actions" id="authActions">
-      <span class="auth-link auth-signin" id="signInBtn">Sign in</span>
-      <span class="auth-divider"></span>
-      <span class="auth-link auth-login" id="logInBtn">
+    <span class="auth-link auth-signin" id="signInBtn">Sign in</span>
+    <span class="auth-divider" id="authDivider"></span>
+    <div class="auth-link auth-login" id="logInBtn">
+      <div class="account-icon-wrap">
         <svg class="login-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8"/>
           <circle cx="12" cy="10" r="3.4" stroke="currentColor" stroke-width="1.8"/>
           <path d="M5.5 19.2c1.3-2.6 3.8-4.2 6.5-4.2s5.2 1.6 6.5 4.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
         </svg>
-        Log in
-      </span>
+        <span class="icon-badge icon-badge-connected" id="badgeConnected"></span>
+        <span class="icon-badge icon-badge-plan" id="badgePlan"></span>
+      </div>
+      <span id="logInLabel">Log in</span>
     </div>
   </div>
 </header>
@@ -1330,6 +1332,10 @@ input[type=color] { width: 34px; height: 34px; border: 1px solid var(--border); 
         <p>Manage your preferences and local data</p>
       </div>
       <div class="settings-card">
+        <div class="row-s">
+          <div class="l">Account<small id="accountStatusLabel">Not signed in</small></div>
+          <button id="logoutBtn" style="display:none;">Log out</button>
+        </div>
         <div class="row-s">
           <div class="l">Favorites<small>Resets your list of favorite styles</small></div>
           <button id="resetFavBtn">Clear</button>
@@ -2936,19 +2942,44 @@ g('themeWrapDrawer').addEventListener('click', ()=>{
 
 /* --- Sign in / Log in (front uniquement pour l'instant) ---
    TODO: remplacer setAuthState(true) par le vrai flux de connexion une fois
-   le backend d'authentification branché, et signInBtn par le vrai flux d'inscription. */
+   le backend d'authentification branché, et signInBtn par le vrai flux d'inscription.
+   Le badge plan (bas gauche de l'icône) réutilise PLAN_TIER_DIAMONDS/PLANS,
+   défini plus bas dans le script — ok car il n'est lu qu'au clic, une fois le
+   script entièrement chargé, jamais lors de l'appel initial setAuthState(false). */
+function updateAccountBadges(loggedIn){
+  g('badgeConnected').classList.toggle('show', loggedIn);
+  let tier = null;
+  if(loggedIn){
+    const plan = PLANS.find(p => p.id === getPlan());
+    tier = plan && plan.tier; // undefined pour le plan Free -> pas de badge
+  }
+  const planBadge = g('badgePlan');
+  if(tier && PLAN_TIER_DIAMONDS[tier]){
+    planBadge.innerHTML = PLAN_TIER_DIAMONDS[tier];
+    planBadge.classList.add('show');
+  } else {
+    planBadge.innerHTML = '';
+    planBadge.classList.remove('show');
+  }
+}
 function setAuthState(loggedIn){
-  g('authActions').style.display = loggedIn ? 'none' : 'flex';
-  g('authStatus').style.display = loggedIn ? 'flex' : 'none';
+  g('signInBtn').style.display = loggedIn ? 'none' : 'flex';
+  g('authDivider').style.display = loggedIn ? 'none' : 'block';
+  g('logInLabel').style.display = loggedIn ? 'none' : 'inline';
+  g('logoutBtn').style.display = loggedIn ? 'inline-flex' : 'none';
+  g('accountStatusLabel').textContent = loggedIn ? "You're signed in" : 'Not signed in';
+  updateAccountBadges(loggedIn);
 }
 g('logInBtn').addEventListener('click', ()=>{
-  setAuthState(true); // placeholder de démo
+  const isLoggedIn = g('badgeConnected').classList.contains('show');
+  if(isLoggedIn){ goToPage('settings'); } // icône = accès rapide aux réglages une fois connecté
+  else{ setAuthState(true); } // placeholder de démo
 });
 g('signInBtn').addEventListener('click', ()=>{
   alert('Sign in flow coming soon.'); // placeholder de démo
 });
-g('authStatus').addEventListener('click', ()=>{
-  setAuthState(false); // pratique en test pour se "déconnecter" ; à retirer en prod
+g('logoutBtn').addEventListener('click', ()=>{
+  setAuthState(false);
 });
 setAuthState(false);
 
