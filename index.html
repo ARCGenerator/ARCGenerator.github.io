@@ -376,6 +376,7 @@ body.theme-light .plan-card { background: var(--surface); }
 .plan-name-row { display: flex; justify-content: flex-start; align-items: center; gap: 10px; margin-bottom: 15px; }
 .plan-name { color: var(--accent); font-size: 20px; font-weight: 600; font-family: 'Inter', sans-serif; }
 .plan-badge { font-size: 11px; background: var(--surface2); color: var(--text); padding: 3px 10px; border-radius: 999px; font-weight: 600; font-family: 'Inter', sans-serif; }
+.plan-discount-badge { font-size: 11px; background: #16a34a; color: #ffffff; padding: 3px 10px; border-radius: 999px; font-weight: 700; font-family: 'Inter', sans-serif; }
 .plan-price-wrapper { margin-bottom: 6px; display: flex; flex-direction: column; width: 100%; }
 .plan-price {
   font-size: 36px; font-weight: 400; font-family: 'Inter', sans-serif;
@@ -3087,8 +3088,8 @@ function setAuthState(loggedIn){
 }
 
 // Login modal (magic link)
-function openAuthModal(){
-  g('authModalMsg').textContent = '';
+function openAuthModal(message){
+  g('authModalMsg').textContent = message || '';
   g('authModalEmailInp').value = '';
   g('authModalOverlay').classList.add('open');
   g('authModal').classList.add('open');
@@ -4154,6 +4155,7 @@ function renderAbonnement(){
     const hasAnnual = !!plan.annualPrice;
     const showAnnual = billingCycle === 'annual' && hasAnnual;
     const displayPrice = showAnnual ? plan.annualPrice : plan.price;
+    const discountPct = hasAnnual ? Math.round((1 - parseFloat(plan.annualPrice) / parseFloat(plan.price)) * 100) : 0;
     let priceNote = '';
     if(showAnnual){
       priceNote = `<div class="plan-price-note">Billed $${plan.annualTotal}/year</div>`;
@@ -4166,6 +4168,7 @@ function renderAbonnement(){
       <div class="plan-name-row">
         <span class="plan-name">${plan.name}</span>
         ${isCurrent?'<span class="plan-badge">Current plan</span>':''}
+        ${showAnnual && discountPct > 0 ? `<span class="plan-discount-badge">-${discountPct}%</span>` : ''}
       </div>
       <div class="plan-price-wrapper">
         <div class="plan-price">$${displayPrice}<span>/mo</span></div>
@@ -4178,6 +4181,12 @@ function renderAbonnement(){
       </ul>
     `;
     card.querySelector('.plan-btn').addEventListener('click', ()=>{
+      if(!isCurrent && plan.id!=='free' && !currentSession){
+        // Choosing (or upgrading to) a paid plan requires a generator account,
+        // even though Stripe isn't wired in yet — no payment without login.
+        openAuthModal('Log in to choose a plan.');
+        return;
+      }
       if(isCurrent && plan.id!=='free' && !cancelled){
         // Résiliation : les avantages restent actifs jusqu'à la prochaine date de facturation
         if(confirm(`Cancel your ${plan.name} subscription? You'll keep your benefits until the end of the period you've already paid for, then you'll automatically switch back to Free.`)){
