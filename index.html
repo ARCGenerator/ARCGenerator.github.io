@@ -133,6 +133,55 @@ body.theme-light .brand-logo-light { display: block; }
   .auth-link.auth-login.is-connected .account-icon-wrap { width: 26px; height: 26px; }
 }
 
+/* --- Login modal (magic link) — pixel-art star card, provided by user --- */
+.auth-modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.6);
+  opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 200;
+}
+.auth-modal-overlay.open { opacity: 1; pointer-events: auto; }
+.auth-modal {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -46%);
+  width: 90%; max-width: 440px; background: #000000; border: 1px solid #333333;
+  border-radius: 16px; padding: 40px;
+  opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 201;
+  font-family: 'Inter', sans-serif; color: #ffffff;
+}
+.auth-modal.open { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%); }
+.am-svg-defs { display: none; }
+.am-close {
+  position: absolute; top: 14px; right: 16px; background: none; border: none;
+  color: #999999; font-size: 22px; line-height: 1; cursor: pointer;
+}
+.am-close:hover { color: #ffffff; }
+.am-corner-star { position: absolute; width: 36px; height: 36px; fill: #ffe000; shape-rendering: crispEdges; }
+.am-star-tr { top: 16px; right: 16px; }
+.am-star-bl { bottom: 16px; left: 16px; }
+.am-header-stars { display: flex; justify-content: center; gap: 12px; margin-bottom: 24px; }
+.am-header-stars svg { width: 28px; height: 28px; fill: #ffe000; shape-rendering: crispEdges; }
+.am-title { font-size: 26px; font-weight: 700; margin-bottom: 12px; text-align: center; color: #ffffff; }
+.am-subtitle { color: #999999; font-size: 14px; line-height: 1.5; margin-bottom: 28px; text-align: center; }
+.am-input-group { margin-bottom: 20px; }
+.am-label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: #ffffff; }
+.am-label svg { width: 16px; height: 16px; fill: #ffe000; }
+.am-input-wrapper { position: relative; }
+.am-input {
+  width: 100%; background-color: transparent; border: 1px solid #333333; border-radius: 8px;
+  padding: 14px 16px; color: #ffffff; font-size: 14px; outline: none; transition: border-color .2s;
+  font-family: 'Inter', sans-serif;
+}
+.am-input::placeholder { color: #555555; }
+.am-input:focus { border-color: #ffe000; }
+.am-btn-primary {
+  width: 100%; background-color: #ffe000; color: #000000; border: none; border-radius: 8px;
+  padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer;
+  display: flex; justify-content: center; align-items: center; gap: 8px; transition: opacity .2s;
+  font-family: 'Inter', sans-serif;
+}
+.am-btn-primary:hover { opacity: .9; }
+.am-btn-primary svg { width: 16px; height: 16px; fill: #000000; }
+.am-msg { margin-top: 10px; font-size: 12.5px; min-height: 16px; color: #999999; text-align: center; }
+.am-hint { text-align: center; margin-top: 16px; font-size: 12px; color: #777777; line-height: 1.5; }
+
 /* --- Toggle thème (icônes soleil/lune), sous la carte Upgrade de la sidebar --- */
 .theme-toggle-mini-wrap { display: flex; align-items: center; gap: 10px; margin: 14px 4px 0; }
 .theme-toggle-mini {
@@ -1010,6 +1059,70 @@ input[type=color] { width: 34px; height: 34px; border: 1px solid var(--border); 
     </div>
   </div>
 </header>
+
+<!-- LOGIN MODAL (magic link, pixel-art star card provided by user) -->
+<div class="auth-modal-overlay" id="authModalOverlay"></div>
+<div class="auth-modal" id="authModal">
+  <svg class="am-svg-defs">
+    <defs>
+      <g id="am-star-detailed">
+        <rect x="8" y="5" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="9" y="6" width="1" height="1"/>
+        <rect x="6" y="7" width="1" height="1"/><rect x="10" y="7" width="1" height="1"/><rect x="5" y="8" width="1" height="1"/>
+        <rect x="11" y="8" width="1" height="1"/><rect x="6" y="9" width="1" height="1"/><rect x="10" y="9" width="1" height="1"/>
+        <rect x="7" y="10" width="1" height="1"/><rect x="9" y="10" width="1" height="1"/><rect x="8" y="11" width="1" height="1"/>
+        <rect x="8" y="0" width="1" height="1"/><rect x="8" y="2" width="1" height="3"/><rect x="8" y="12" width="1" height="3"/>
+        <rect x="8" y="16" width="1" height="1"/><rect x="0" y="8" width="1" height="1"/><rect x="2" y="8" width="3" height="1"/>
+        <rect x="12" y="8" width="3" height="1"/><rect x="16" y="8" width="1" height="1"/>
+      </g>
+      <g id="am-star-cluster-hollow">
+        <rect x="8" y="8" width="3" height="3" />
+        <rect x="9" y="9" width="1" height="1" fill="#000000" />
+        <rect x="9" y="4" width="1" height="4" />
+        <rect x="9" y="11" width="1" height="4" />
+        <rect x="4" y="9" width="4" height="1" />
+        <rect x="11" y="9" width="4" height="1" />
+        <rect x="2" y="1" width="3" height="1" />
+        <rect x="3" y="0" width="1" height="3" />
+        <rect x="3" y="1" width="1" height="1" fill="#000000" />
+        <rect x="14" y="16" width="3" height="1" />
+        <rect x="15" y="15" width="1" height="3" />
+        <rect x="15" y="16" width="1" height="1" fill="#000000" />
+      </g>
+      <g id="am-icon-mail"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></g>
+      <g id="am-icon-arrow"><path d="M5 3l3.05 3.15-8.05.01v1.69l8.05-.01L5 11l1.41 1.41L13.83 7 6.41-.41z"/></g>
+    </defs>
+  </svg>
+
+  <button class="am-close" id="authModalClose" aria-label="Close">&times;</button>
+  <svg class="am-corner-star am-star-tr" viewBox="0 0 20 20"><use href="#am-star-cluster-hollow"/></svg>
+  <svg class="am-corner-star am-star-bl" viewBox="0 0 20 20"><use href="#am-star-cluster-hollow"/></svg>
+
+  <div class="am-header-stars">
+    <svg viewBox="0 0 17 17"><use href="#am-star-detailed"/></svg>
+    <svg viewBox="0 0 17 17"><use href="#am-star-detailed"/></svg>
+    <svg viewBox="0 0 17 17"><use href="#am-star-detailed"/></svg>
+    <svg viewBox="0 0 17 17"><use href="#am-star-detailed"/></svg>
+    <svg viewBox="0 0 17 17"><use href="#am-star-detailed"/></svg>
+  </div>
+
+  <h2 class="am-title">Log in to Progression Line</h2>
+  <p class="am-subtitle">Enter your email to log in<br>or create your account.</p>
+
+  <div class="am-input-group">
+    <label class="am-label"><svg viewBox="0 0 24 24"><use href="#am-icon-mail"/></svg> Email address</label>
+    <div class="am-input-wrapper">
+      <input class="am-input" type="email" id="authModalEmailInp" placeholder="you@email.com">
+    </div>
+  </div>
+
+  <button class="am-btn-primary" id="authModalSendBtn">
+    Continue <svg viewBox="0 0 14 14"><use href="#am-icon-arrow"/></svg>
+  </button>
+
+  <div class="am-msg" id="authModalMsg"></div>
+
+  <p class="am-hint">New here? Your account will be created automatically.<br>No password required, you'll receive a login link by email.</p>
+</div>
 
 <!-- DRAWER (menu hamburger, mobile) -->
 <div class="drawer-overlay" id="drawerOverlay"></div>
@@ -2942,12 +3055,13 @@ g('themeWrapDrawer').addEventListener('click', ()=>{
   applyTheme(saved !== 'light');
 })();
 
-/* --- Log in (front only for now) ---
-   TODO: replace setAuthState(true) with the real magic-link flow once the
-   auth backend is wired in for the header button.
+/* --- Log in (header) ---
+   Backed by the real Supabase magic-link auth (sendMagicLink/currentSession,
+   defined above). No separate "sign up": the same email form logs in an
+   existing user or creates the account automatically if it doesn't exist yet.
    The plan badge (bottom-left of the icon) reuses PLAN_TIER_DIAMONDS/PLANS,
-   defined further down in the script — ok since it's only read on click, once
-   the script has fully loaded, never during the initial setAuthState(false) call. */
+   defined further down in the script — ok since it's only read once the
+   script has fully loaded. */
 function updateAccountBadges(loggedIn){
   g('badgeConnected').classList.toggle('show', loggedIn);
   let tier = null;
@@ -2971,15 +3085,47 @@ function setAuthState(loggedIn){
   g('accountStatusLabel').textContent = loggedIn ? "You're signed in" : 'Not signed in';
   updateAccountBadges(loggedIn);
 }
+
+// Login modal (magic link)
+function openAuthModal(){
+  g('authModalMsg').textContent = '';
+  g('authModalEmailInp').value = '';
+  g('authModalOverlay').classList.add('open');
+  g('authModal').classList.add('open');
+}
+function closeAuthModal(){
+  g('authModalOverlay').classList.remove('open');
+  g('authModal').classList.remove('open');
+}
+g('authModalOverlay').addEventListener('click', closeAuthModal);
+g('authModalClose').addEventListener('click', closeAuthModal);
+async function submitAuthModal(){
+  const email = g('authModalEmailInp').value.trim();
+  const msg = g('authModalMsg');
+  if(!email){ msg.textContent = 'Enter a valid email.'; return; }
+  msg.textContent = 'Sending...';
+  const error = await sendMagicLink(email);
+  if(error) console.error('signInWithOtp error:', error);
+  msg.textContent = error ? `Error: ${error.message}` : `Link sent to ${email} — check your inbox.`;
+}
+g('authModalSendBtn').addEventListener('click', submitAuthModal);
+g('authModalEmailInp').addEventListener('keydown', (e)=>{ if(e.key === 'Enter') submitAuthModal(); });
+
 g('logInBtn').addEventListener('click', ()=>{
-  const isLoggedIn = g('badgeConnected').classList.contains('show');
-  if(isLoggedIn){ goToPage('settings'); } // icon = quick access to settings once logged in
-  else{ setAuthState(true); } // demo placeholder
+  if(currentSession){ goToPage('settings'); } // icon = quick access to settings once logged in
+  else{ openAuthModal(); }
 });
-g('logoutBtn').addEventListener('click', ()=>{
-  setAuthState(false);
+g('logoutBtn').addEventListener('click', async ()=>{
+  await signOutUser(); // onAuthStateChange below refreshes the header
 });
-setAuthState(false);
+// Keep the header in sync with the real session, on load and on every change
+// (login, logout, magic-link redirect landing).
+supabaseClient.auth.onAuthStateChange((_event, session) => {
+  currentSession = session;
+  setAuthState(!!session);
+  if(session) closeAuthModal();
+});
+setAuthState(!!currentSession);
 
 const STYLE_DESC = {
   default: 'Original style with outline',
