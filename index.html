@@ -109,11 +109,10 @@ body.theme-light .brand-logo-light { display: block; }
 .toggle-switch-lg.on { background: var(--toggle-on); }
 .toggle-switch-lg.on::after { transform: translateX(18px); background: #fff; }
 
-/* --- Sign in / Log in (en-tête, à droite) --- */
+/* --- Log in (en-tête, à droite) --- */
 .header-right { display: flex; align-items: center; gap: 14px; }
 .auth-link { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--label); cursor: pointer; user-select: none; transition: color .15s; }
 .auth-link:hover { color: var(--text); }
-.auth-divider { width: 1px; height: 14px; background: var(--border); }
 /* Taille de l'icône pilotée UNIQUEMENT par account-icon-wrap : le svg suit à 100%,
    donc le point vert (positionné par rapport au wrap) reste toujours collé à l'icône. */
 .account-icon-wrap { position: relative; width: 17px; height: 17px; flex-shrink: 0; transition: width .15s, height .15s; }
@@ -132,7 +131,6 @@ body.theme-light .brand-logo-light { display: block; }
   .auth-link.auth-login { gap: 4px; }
   .account-icon-wrap { width: 15px; height: 15px; }
   .auth-link.auth-login.is-connected .account-icon-wrap { width: 26px; height: 26px; }
-  .auth-divider { margin: 0 -2px; }
 }
 
 /* --- Toggle thème (icônes soleil/lune), sous la carte Upgrade de la sidebar --- */
@@ -998,8 +996,6 @@ input[type=color] { width: 34px; height: 34px; border: 1px solid var(--border); 
     <span class="brand-name">Progress Bar Generator</span>
   </div>
   <div class="header-right">
-    <span class="auth-link auth-signin" id="signInBtn">Sign in</span>
-    <span class="auth-divider" id="authDivider"></span>
     <div class="auth-link auth-login" id="logInBtn">
       <div class="account-icon-wrap">
         <svg class="login-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -2946,18 +2942,18 @@ g('themeWrapDrawer').addEventListener('click', ()=>{
   applyTheme(saved !== 'light');
 })();
 
-/* --- Sign in / Log in (front uniquement pour l'instant) ---
-   TODO: remplacer setAuthState(true) par le vrai flux de connexion une fois
-   le backend d'authentification branché, et signInBtn par le vrai flux d'inscription.
-   Le badge plan (bas gauche de l'icône) réutilise PLAN_TIER_DIAMONDS/PLANS,
-   défini plus bas dans le script — ok car il n'est lu qu'au clic, une fois le
-   script entièrement chargé, jamais lors de l'appel initial setAuthState(false). */
+/* --- Log in (front only for now) ---
+   TODO: replace setAuthState(true) with the real magic-link flow once the
+   auth backend is wired in for the header button.
+   The plan badge (bottom-left of the icon) reuses PLAN_TIER_DIAMONDS/PLANS,
+   defined further down in the script — ok since it's only read on click, once
+   the script has fully loaded, never during the initial setAuthState(false) call. */
 function updateAccountBadges(loggedIn){
   g('badgeConnected').classList.toggle('show', loggedIn);
   let tier = null;
   if(loggedIn){
     const plan = PLANS.find(p => p.id === getPlan());
-    tier = plan && plan.tier; // undefined pour le plan Free -> pas de badge
+    tier = plan && plan.tier; // undefined for Free plan -> no badge
   }
   const planBadge = g('badgePlan');
   if(tier && PLAN_TIER_DIAMONDS[tier]){
@@ -2969,21 +2965,16 @@ function updateAccountBadges(loggedIn){
   }
 }
 function setAuthState(loggedIn){
-  g('signInBtn').style.display = loggedIn ? 'none' : 'flex';
-  g('authDivider').style.display = loggedIn ? 'none' : 'block';
   g('logInLabel').style.display = loggedIn ? 'none' : 'inline';
-  g('logInBtn').classList.toggle('is-connected', loggedIn); // icône plus grande une fois connecté
+  g('logInBtn').classList.toggle('is-connected', loggedIn); // bigger icon once logged in
   g('logoutBtn').style.display = loggedIn ? 'inline-flex' : 'none';
   g('accountStatusLabel').textContent = loggedIn ? "You're signed in" : 'Not signed in';
   updateAccountBadges(loggedIn);
 }
 g('logInBtn').addEventListener('click', ()=>{
   const isLoggedIn = g('badgeConnected').classList.contains('show');
-  if(isLoggedIn){ goToPage('settings'); } // icône = accès rapide aux réglages une fois connecté
-  else{ setAuthState(true); } // placeholder de démo
-});
-g('signInBtn').addEventListener('click', ()=>{
-  alert('Sign in flow coming soon.'); // placeholder de démo
+  if(isLoggedIn){ goToPage('settings'); } // icon = quick access to settings once logged in
+  else{ setAuthState(true); } // demo placeholder
 });
 g('logoutBtn').addEventListener('click', ()=>{
   setAuthState(false);
